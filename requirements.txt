@@ -1,0 +1,18 @@
+# Web Interface (Giao diện Web)
+streamlit>=1.30.0
+streamlit-chat>=0.1.1
+
+# Backend & Database (Hậu tầng & Cơ sở dữ liệu)
+firebase-admin>=6.2.0
+python-dotenv>=1.0.0
+
+# AI & Natural Language Processing (AI & Xử lý ngôn ngữ tự nhiên)
+google-generativeai>=0.3.0
+textblob>=0.17.1
+
+# Data Processing (Xử lý dữ liệu)
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Utilities
+requests>=2.31.0

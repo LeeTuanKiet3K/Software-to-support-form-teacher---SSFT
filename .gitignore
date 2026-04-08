@@ -1,0 +1,31 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv
+venv/
+ENV/
+env/
+build/
+dist/
+
+# --- Firebase & Security (Bảo mật cực kỳ quan trọng) ---
+# Không bao giờ upload file chứa key của Firebase lên GitHub
+serviceAccountKey.json
+.env
+
+# --- Streamlit ---
+.streamlit/config.toml
+# Nếu bạn chạy streamlit và nó sinh ra các file log tạm thời
+.streamlit/static/
+
+# --- IDEs & OS ---
+.vscode/
+.idea/
+.DS_Store
+*.swp
+Thumbs.db
+
+# --- Data & Temporary files ---
+*.log
+/app/features/*/cache/
