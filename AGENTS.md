@@ -1,5 +1,22 @@
 # AGENTS.md - Project Instructions for GVCN Support System
 
+## 0. Naming Conventions (Quy ước đặt tên)
+
+Để đảm bảo tính đồng bộ cho toàn bộ source code, Agent phải tuân thủ các quy tắc sau:
+
+1. **Classes (Lớp):** Sử dụng **PascalCase**.
+   - *Ví dụ:* `FirebaseHandler`, `IssueManager`, `UserSession`.
+2. **Variables & Functions (Biến & Hàm):** Sử dụng **camelCase**.
+   - *Ví dụ:* `studentName`, `getStudentData()`, `calculatePriority()`.
+3. **Private Members (Thành phần nội bộ):** Thêm tiền tố **m_** trước tên biến.
+   - *Ví dụ:* `m_dbClient`, `m_apiKey`.
+4. **Getters & Setters:** Sử dụng tiền tố **get** và **set**.
+   - *Ví dụ:* `getRole()`, `setStatus()`.
+5. **Constants (Hằng số):** Sử dụng **UPPER_CASE** với dấu gạch nối.
+   - *Ví dụ:* `MAX_RETRY_ATTEMPTS`, `FIREBASE_TIMEOUT`.
+
+*Lưu ý: Luôn ưu tiên dùng tiếng Anh cho tên biến/hàm và kèm chú thích tiếng Việt bên cạnh các thuật ngữ IT.*
+
 ## 1. Project Context (Bối cảnh Đồ án)
 * **Project Name**: Phần mềm hỗ trợ Giáo viên chủ nhiệm (GVCN).
 * **Core Objective**: Xây dựng hệ thống hỗ trợ GVCN quản lý, tư vấn và phân loại vấn đề của sinh viên bằng AI để giảm tải khối lượng công việc (Workload reduction).
@@ -38,3 +55,49 @@
 1. **Plan Before Action**: Luôn tạo một **Plan Artifact** (Kế hoạch thực hiện) chi tiết trước khi tạo file hoặc viết code.
 2. **Modular Implementation**: Triển khai từng module một. Đảm bảo cấu trúc file rõ ràng như đã thỏa thuận.
 3. **Double Check**: Sau khi viết code, kiểm tra lại xem các chú thích tiếng Việt đã đầy đủ và dễ hiểu chưa.
+
+## 6. Folder Structure (Cấu trúc thư mục tổng hợp)
+/Software-to-support-form-teacher---SSFT
+├── /app
+│   ├── __init__.py
+│   ├── /core                (Cấu hình & Logic hệ thống)
+│   │   ├── Config.py        (Nạp .env & Remote Config để Bật/Tắt AI)
+│   │   ├── Constants.py     (Lưu Role, Trạng thái vấn đề, Mức độ ưu tiên)
+│   │   └── __init__.py
+│   ├── /features            (Tính năng nghiệp vụ)
+│   │   ├── /auth            (Tài khoản, Mật khẩu & Phân quyền)
+│   │   │   ├── AuthService.py
+│   │   │   └── UserModels.py
+│   │   ├── /chat            (AI Tư vấn & Tin nhắn trực tiếp)
+│   │   │   ├── ChatProcessor.py
+│   │   │   └── PromptTemplates.py
+│   │   ├── /issue_manager   (Quản lý vấn đề từ SV/AI gửi tới)
+│   │   │   ├── IssueService.py
+│   │   │   └── PriorityLogic.py (Thuật toán sắp xếp vấn đề)
+│   │   ├── /academic        (Quản lý Điểm số & Thông tin SV)
+│   │   │   ├── AcademicService.py
+│   │   │   └── GradeModels.py
+│   │   ├── /notifications   (Thông báo & Phản hồi từ GVCN)
+│   │   │   ├── NotificationService.py
+│   │   │   └── AnnouncementUI.py
+│   │   └── /analytics       (Dashboard GVCN & Đánh giá lớp)
+│   │       └── AdvisorDashboard.py
+│   ├── /services            (Kết nối Database/Cloud)
+│   │   ├── __init__.py
+│   │   ├── FirestoreHandler.py  (Lưu SV, Điểm, Tin nhắn)
+│   │   ├── StorageHandler.py    (Lưu Ảnh minh chứng, Avatar)
+│   │   ├── RealtimeHandler.py   (Trạng thái Chat trực tiếp)
+│   │   └── FirebaseAuthHandler.py (Xử lý Auth)
+│   ├── /utils               (Tiện ích dùng chung)
+│   │   ├── __init__.py
+│   │   ├── DateHelpers.py   (Định dạng thời gian)
+│   │   └── Validators.py    (Kiểm tra dữ liệu đầu vào)
+│   └── main.py              (Giao diện Streamlit chính)
+├── /data                    (Dữ liệu lưu trữ)
+│   ├── serviceAccountKey.json (Firebase Key)
+│   └── KnowledgeBase.json   (Dữ liệu keyword xác định)
+├── .env                     (Biến môi trường)
+├── .gitignore
+├── AGENTS.md
+├── SCHEMA.md                (Thiết kế cấu trúc dữ liệu)
+└── requirements.txt

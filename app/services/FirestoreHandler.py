@@ -17,20 +17,20 @@ class FirebaseHandler:
         """
         Khởi tạo dịch vụ (Initialize services) và kết nối tới database.
         """
-        self.service_account_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
+        self.m_serviceAccountPath = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
         
-        if not self.service_account_path:
+        if not self.m_serviceAccountPath:
             raise ValueError("Lỗi: FIREBASE_SERVICE_ACCOUNT_PATH không được tìm thấy trong tệp .env.")
         
         # Chỉ khởi tạo app nếu chưa tồn tại (Prevent multiple app initializations)
         if not firebase_admin._apps:
-            cred = credentials.Certificate(self.service_account_path)
+            cred = credentials.Certificate(self.m_serviceAccountPath)
             firebase_admin.initialize_app(cred)
         
         # Khởi tạo Firestore database client (Trình quản lý cơ sở dữ liệu)
-        self.db = firestore.client()
+        self.m_db = firestore.client()
 
-    def verify_login(self, email: str, password: str) -> Optional[str]:
+    def verifyLogin(self, email: str, password: str) -> Optional[str]:
         """
         Xác thực người dùng (User Authentication).
         Kiểm tra thông tin đăng nhập trong collection 'Users'.
@@ -43,20 +43,20 @@ class FirebaseHandler:
             Optional[str]: Trả về Role (Vai trò) của người dùng hoặc None nếu sai thông tin xác thực.
         """
         # Tham chiếu tới tập hợp người dùng (Reference to 'users' collection)
-        users_ref = self.db.collection('Users')
+        usersRef = self.m_db.collection('Users')
         
         # Truy vấn tìm user theo email và giới hạn 1 kết quả (Optimize read operations)
-        query = users_ref.where(filter=firestore.FieldFilter('email', '==', email)).limit(1).stream()
+        query = usersRef.where(filter=firestore.FieldFilter('email', '==', email)).limit(1).stream()
         
         for doc in query:
-            user_data = doc.to_dict()
+            userData = doc.to_dict()
             # So khớp mật khẩu đã lưu (Password verification)
-            if user_data.get('password') == password:
-                return user_data.get('role')  # Trả về Vai trò của user
+            if userData.get('password') == password:
+                return userData.get('role')  # Trả về Vai trò của user
                 
         return None
 
-    def get_knowledge_base(self) -> List[Dict[str, any]]:
+    def getKnowledgeBase(self) -> List[Dict[str, any]]:
         """
         Lấy dữ liệu làm cơ sở tri thức (Fetch Knowledge Base) từ Firestore.
         Dữ liệu này dùng làm Grounding để tránh tình trạng AI bịa đặt (Hallucination fallback).
@@ -65,50 +65,50 @@ class FirebaseHandler:
             List[Dict]: Danh sách các quy định và thông tin hỗ trợ từ hệ thống.
         """
         # Tham chiếu tới tập hợp Cơ sở tri thức (Reference to 'knowledge_base' collection)
-        kb_ref = self.db.collection('knowledge_base')
+        kbRef = self.m_db.collection('knowledge_base')
         
         # Tải toàn bộ tài liệu từ cơ sở tri thức (Fetch all documents)
-        docs = kb_ref.stream()
+        docs = kbRef.stream()
         
-        knowledge_list = []
+        knowledgeList = []
         for doc in docs:
             data = doc.to_dict()
             data['doc_id'] = doc.id
-            knowledge_list.append(data)
+            knowledgeList.append(data)
             
-        return knowledge_list
+        return knowledgeList
         
-    def save_issue(self, student_id_or_name: str, issue_text: str, priority_level: str, status: str = "Pending Advisor") -> str:
+    def saveIssue(self, studentIdOrName: str, issueText: str, priorityLevel: str, status: str = "Pending Advisor") -> str:
         """
         Lưu vấn đề (Issue) của sinh viên vào Firestore khi cần sự can thiệp của GVCN.
         
         Args:
-            student_id_or_name (str): Tên hoặc ID của sinh viên gửi vấn đề.
-            issue_text (str): Nội dung chi tiết của vấn đề.
-            priority_level (str): Mức độ ưu tiên (vd: 'P0', 'P1').
+            studentIdOrName (str): Tên hoặc ID của sinh viên gửi vấn đề.
+            issueText (str): Nội dung chi tiết của vấn đề.
+            priorityLevel (str): Mức độ ưu tiên (vd: 'P0', 'P1').
             status (str): Trạng thái của vấn đề (mặc định là 'Pending Advisor' - Chờ GVCN xử lý).
             
         Returns:
             str: ID của document vừa được tạo.
         """
         # Tham chiếu tới tập hợp các vấn đề (Reference to 'issues' collection)
-        issues_ref = self.db.collection('issues')
+        issuesRef = self.m_db.collection('issues')
         
         # Dữ liệu cần lưu (Data to insert)
-        issue_data = {
-            'student': student_id_or_name,
-            'issue_text': issue_text,
-            'priority_level': priority_level,
+        issueData = {
+            'student': studentIdOrName,
+            'issue_text': issueText,
+            'priority_level': priorityLevel,
             'status': status,
             'created_at': firestore.SERVER_TIMESTAMP  # Thời gian tạo do server Firebase tự định đoạt
         }
         
         # Thêm document (Add new document)
-        update_time, doc_ref = issues_ref.add(issue_data)
+        updateTime, docRef = issuesRef.add(issueData)
         
-        return doc_ref.id
+        return docRef.id
 
-    def get_issues(self) -> List[Dict[str, any]]:
+    def getIssues(self) -> List[Dict[str, any]]:
         """
         Lấy danh sách các vấn đề (Issues) cần được Giáo viên xử lý,
         được sắp xếp theo mức độ ưu tiên: P0 > P1 > P2.
@@ -116,26 +116,26 @@ class FirebaseHandler:
         Returns:
             List[Dict]: Danh sách vấn đề đã được sắp xếp.
         """
-        issues_ref = self.db.collection('issues')
+        issuesRef = self.m_db.collection('issues')
         # Lấy trạng thái Pending Advisor (Unresolved issues)
-        query = issues_ref.where(filter=firestore.FieldFilter('status', '==', 'Pending Advisor')).stream()
+        query = issuesRef.where(filter=firestore.FieldFilter('status', '==', 'Pending Advisor')).stream()
         
-        issues_list = []
+        issuesList = []
         for doc in query:
             data = doc.to_dict()
             data['issue_id'] = doc.id
-            issues_list.append(data)
+            issuesList.append(data)
             
         # Thuật toán sắp xếp ưu tiên (Priority Sorting Algorithm)
         # Gán trọng số: P0 = 0, P1 = 1, P2 = 2 (số càng nhỏ càng ưu tiên hiển thị trước)
-        priority_weight = {"P0": 0, "P1": 1, "P2": 2}
+        priorityWeight = {"P0": 0, "P1": 1, "P2": 2}
         
         # Sắp xếp danh sách dựa trên cột priority_level
-        issues_list.sort(key=lambda x: priority_weight.get(x.get('priority_level', 'P2'), 99))
+        issuesList.sort(key=lambda x: priorityWeight.get(x.get('priority_level', 'P2'), 99))
         
-        return issues_list
+        return issuesList
 
-    def get_user_profile(self, uid: str) -> Optional[Dict[str, any]]:
+    def getUserProfile(self, uid: str) -> Optional[Dict[str, any]]:
         """
         Lấy thông tin hồ sơ người dùng ngay sau khi đăng nhập thành công.
         
@@ -145,15 +145,15 @@ class FirebaseHandler:
         Returns:
             Optional[Dict]: Dữ liệu người dùng (nếu tồn tại), ngược lại trả về None.
         """
-        user_ref = self.db.collection('Users').document(uid)
-        doc = user_ref.get()
+        userRef = self.m_db.collection('Users').document(uid)
+        doc = userRef.get()
         if doc.exists:
             data = doc.to_dict()
             data['uid'] = doc.id
             return dict(data)
         return None
 
-    def create_user_profile(self, uid: str, data: Dict[str, any]) -> bool:
+    def createUserProfile(self, uid: str, data: Dict[str, any]) -> bool:
         """
         Tạo mới hồ sơ người dùng (User Profile) trong cơ sở dữ liệu.
         
@@ -165,13 +165,13 @@ class FirebaseHandler:
         Returns:
             bool: Trạng thái tạo mới thành công.
         """
-        user_ref = self.db.collection('Users').document(uid)
+        userRef = self.m_db.collection('Users').document(uid)
         
         # Đính kèm thời gian khởi tạo (Append server timestamp)
         data['created_at'] = firestore.SERVER_TIMESTAMP
         
         try:
-            user_ref.set(data)
+            userRef.set(data)
             return True
         except Exception as e:
             print(f"Error creating user profile: {e}")

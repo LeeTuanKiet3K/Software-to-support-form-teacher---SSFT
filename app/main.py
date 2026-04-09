@@ -5,15 +5,15 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st
 from streamlit_chat import message
-from app.services.firebase_handler import FirebaseHandler
-from app.features.chat.processor import process_student_message
+from app.services.FirestoreHandler import FirebaseHandler
+from app.features.chat.ChatProcessor import processStudentMessage
 
 # Khởi tạo đối tượng Firebase Handler (Singleton context giả lập)
 @st.cache_resource
-def get_firebase_handler():
+def getFirebaseHandler():
     return FirebaseHandler()
 
-firebase_handler = get_firebase_handler()
+firebaseHandler = getFirebaseHandler()
 
 # Cấu hình cài đặt trang web mặc định (Page configuration)
 st.set_page_config(page_title="Hệ thống Hỗ trợ GVCN", page_icon="🎓", layout="wide")
@@ -27,7 +27,7 @@ if 'username' not in st.session_state:
 if 'messages' not in st.session_state:
     st.session_state['messages'] = []
 
-def login_screen():
+def loginScreen():
     """
     Giao diện màn hình đăng nhập.
     """
@@ -37,11 +37,11 @@ def login_screen():
     with st.form(key="login_form"):
         email = st.text_input("Email", placeholder="Ví dụ: student@school.edu.vn")
         password = st.text_input("Mật khẩu", type="password")
-        submit_button = st.form_submit_button(label="Đăng nhập")
+        submitButton = st.form_submit_button(label="Đăng nhập")
         
-    if submit_button:
+    if submitButton:
         if email and password:
-            role = firebase_handler.verify_login(email, password)
+            role = firebaseHandler.verifyLogin(email, password)
             if role:
                 st.session_state['user_role'] = role
                 st.session_state['username'] = email.split("@")[0]
@@ -52,7 +52,7 @@ def login_screen():
         else:
             st.warning("Vui lòng nhập đầy đủ thông tin.")
 
-def student_chat_interface():
+def studentChatInterface():
     """
     Giao diện Chat dành cho Sinh viên (Student View).
     """
@@ -66,36 +66,36 @@ def student_chat_interface():
          st.rerun()
          
     # Container lưu giữ và hiển thị lịch sử đoạn chat
-    chat_container = st.container()
+    chatContainer = st.container()
     
     # Input field cho User
     with st.form(key="chat_form", clear_on_submit=True):
         col1, col2 = st.columns([8, 1])
         with col1:
-            user_input = st.text_input("Bạn đang gặp vấn đề gì?", label_visibility="collapsed")
+            userInput = st.text_input("Bạn đang gặp vấn đề gì?", label_visibility="collapsed")
         with col2:
-            submit_btn = st.form_submit_button("Gửi 🚀")
+            submitBtn = st.form_submit_button("Gửi 🚀")
             
-    if submit_btn and user_input:
+    if submitBtn and userInput:
         # 1. Thêm câu hỏi của user vào danh sách
-        st.session_state['messages'].append({"content": user_input, "is_user": True})
+        st.session_state['messages'].append({"content": userInput, "is_user": True})
         
         # 2. Xử lý qua Chat Processor
         with st.spinner("AI đang xử lý..."):
-            ai_response = process_student_message(
-                student_id_or_name=st.session_state['username'],
-                issue_text=user_input,
-                firebase_handler=firebase_handler
+            aiResponse = processStudentMessage(
+                studentIdOrName=st.session_state['username'],
+                issueText=userInput,
+                firebaseHandler=firebaseHandler
             )
             
         # 3. Thêm phản hồi của AI vào danh sách
-        st.session_state['messages'].append({"content": ai_response, "is_user": False})
+        st.session_state['messages'].append({"content": aiResponse, "is_user": False})
         
         # Reload để hiển thị tin nhắn mới ngay lập tức
         st.rerun()
         
     # Render các tin nhắn trong container (Từ cũ đến mới)
-    with chat_container:
+    with chatContainer:
         if not st.session_state['messages']:
             st.info("Bắt đầu cuộc trò chuyện bằng cách nhập câu hỏi ở bên dưới.")
             
@@ -103,7 +103,7 @@ def student_chat_interface():
             # Hàm message() của streamlit_chat sẽ tạo ra giao diện bong bóng thoại
             message(msg["content"], is_user=msg["is_user"], key=f"msg_{i}")
 
-def advisor_dashboard_interface():
+def advisorDashboardInterface():
     """
     Bảng điều khiển (Dashboard) dành cho GVCN.
     Hiển thị các issues cần xử lý, sắp xếp theo mức độ ưu tiên.
@@ -117,7 +117,7 @@ def advisor_dashboard_interface():
     st.header("📋 Danh sách các vấn đề sinh viên cần xử lý")
     
     with st.spinner("Đang tải dữ liệu từ cơ sở dữ liệu (Fetching data)..."):
-        issues = firebase_handler.get_issues()
+        issues = firebaseHandler.getIssues()
         
     if not issues:
         st.success("Tuyệt vời! Hiện tại không có vấn đề nào cần giải quyết.")
@@ -154,11 +154,11 @@ def main():
     role = st.session_state['user_role']
     
     if role is None:
-        login_screen()
+        loginScreen()
     elif role == "student":
-        student_chat_interface()
+        studentChatInterface()
     elif role == "advisor":
-        advisor_dashboard_interface()
+        advisorDashboardInterface()
     else:
         st.error("Phân quyền không hợp lệ. Vui lòng thử lại.")
         st.session_state['user_role'] = None
