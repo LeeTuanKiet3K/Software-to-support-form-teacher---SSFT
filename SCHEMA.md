@@ -102,11 +102,9 @@
     * `topic`: string (Chủ đề tra cứu).
     * `doc_id`: string (id dữ liệu gốc).
     * `source`: map (nguồn dữ liệu).
-    * `priority`: int (độ ưu tiên)
-    * `chunk_index`: int (thứ tự đoạn trong tài liệu).
     * `keywords`: array (Các từ khóa liên quan).
     * `content`: string (Nội dung tri thức chính xác).
-    * `updated_at`: timestamp (Thời gian cập nhật).
+    * `updated_at`: timestamp.
 
 ### **Collection: `AI_logs` (Nhật ký xử lý AI)**
 * **Fields**:
