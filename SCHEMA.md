@@ -101,7 +101,7 @@
 * **Fields**:
     * `topic`: string (Chủ đề tra cứu).
     * `doc_id`: string (id dữ liệu gốc).
-    * `source`: map (nguồn dữ liệu).
+    * `source`: string (nguồn dữ liệu).
     * `keywords`: array (Các từ khóa liên quan).
     * `content`: string (Nội dung tri thức chính xác).
     * `updated_at`: timestamp.
