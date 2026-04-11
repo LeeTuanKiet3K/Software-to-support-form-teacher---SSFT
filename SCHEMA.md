@@ -20,7 +20,7 @@
 * **Fields**:
     * `class_name`: string (Tên lớp).
     * `advisor_id`: string (UID của GVCN - Liên kết với Users).
-    * `student_count`: number (Số lượng sinh viên).
+    * `student_count`: int (Số lượng sinh viên).
     * `created_at`: timestamp (Thời điểm tạo).
 
 ---
@@ -90,7 +90,7 @@
     * `student_id`: string (UID sinh viên).
     * `class_id`: string (Mã lớp).
     * `subjects`: array (Danh sách môn học và điểm số).
-    * `gpa`: number (Điểm trung bình học kỳ/năm).
+    * `gpa`: double (Điểm trung bình học kỳ/năm).
     * `updated_at`: timestamp (Thời gian cập nhật).
 
 ---
@@ -100,6 +100,10 @@
 ### **Collection: `Common_data` (Kho tri thức cho AI tra cứu)**
 * **Fields**:
     * `topic`: string (Chủ đề tra cứu).
+    * `doc_id`: string (id dữ liệu gốc).
+    * `source`: map (nguồn dữ liệu).
+    * `priority`: int (độ ưu tiên)
+    * `chunk_index`: int (thứ tự đoạn trong tài liệu).
     * `keywords`: array (Các từ khóa liên quan).
     * `content`: string (Nội dung tri thức chính xác).
     * `updated_at`: timestamp (Thời gian cập nhật).
