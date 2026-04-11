@@ -75,8 +75,8 @@
 │   │   │   ├── IssueService.py  
 │   │   │   └── PriorityLogic.py (Thuật toán sắp xếp vấn đề)  
 │   │   ├── /academic        (Quản lý Điểm số & Thông tin SV)  
-│   │   │   ├── AcademicService.py  
-│   │   │   └── GradeModels.py  
+│   │   │   ├── AcademicService.py  (Xử lý các logic chính)  
+│   │   │   └── GradeModels.py  (Định nghĩa cấu trúc dữ liệu hoặc các Class)  
 │   │   ├── /notifications   (Thông báo & Phản hồi từ GVCN)  
 │   │   │   ├── NotificationService.py  
 │   │   │   └── AnnouncementUI.py  
