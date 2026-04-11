@@ -57,47 +57,47 @@
 3. **Double Check**: Sau khi viết code, kiểm tra lại xem các chú thích tiếng Việt đã đầy đủ và dễ hiểu chưa.
 
 ## 6. Folder Structure (Cấu trúc thư mục tổng hợp)
-/Software-to-support-form-teacher---SSFT
-├── /app
-│   ├── __init__.py
-│   ├── /core                (Cấu hình & Logic hệ thống)
-│   │   ├── Config.py        (Nạp .env & Remote Config để Bật/Tắt AI)
-│   │   ├── Constants.py     (Lưu Role, Trạng thái vấn đề, Mức độ ưu tiên)
-│   │   └── __init__.py
-│   ├── /features            (Tính năng nghiệp vụ)
-│   │   ├── /auth            (Tài khoản, Mật khẩu & Phân quyền)
-│   │   │   ├── AuthService.py
-│   │   │   └── UserModels.py
-│   │   ├── /chat            (AI Tư vấn & Tin nhắn trực tiếp)
-│   │   │   ├── ChatProcessor.py
-│   │   │   └── PromptTemplates.py
-│   │   ├── /issue_manager   (Quản lý vấn đề từ SV/AI gửi tới)
-│   │   │   ├── IssueService.py
-│   │   │   └── PriorityLogic.py (Thuật toán sắp xếp vấn đề)
-│   │   ├── /academic        (Quản lý Điểm số & Thông tin SV)
-│   │   │   ├── AcademicService.py
-│   │   │   └── GradeModels.py
-│   │   ├── /notifications   (Thông báo & Phản hồi từ GVCN)
-│   │   │   ├── NotificationService.py
-│   │   │   └── AnnouncementUI.py
-│   │   └── /analytics       (Dashboard GVCN & Đánh giá lớp)
-│   │       └── AdvisorDashboard.py
-│   ├── /services            (Kết nối Database/Cloud)
-│   │   ├── __init__.py
-│   │   ├── FirestoreHandler.py  (Lưu SV, Điểm, Tin nhắn)
-│   │   ├── StorageHandler.py    (Lưu Ảnh minh chứng, Avatar)
-│   │   ├── RealtimeHandler.py   (Trạng thái Chat trực tiếp)
-│   │   └── FirebaseAuthHandler.py (Xử lý Auth)
-│   ├── /utils               (Tiện ích dùng chung)
-│   │   ├── __init__.py
-│   │   ├── DateHelpers.py   (Định dạng thời gian)
-│   │   └── Validators.py    (Kiểm tra dữ liệu đầu vào)
-│   └── main.py              (Giao diện Streamlit chính)
-├── /data                    (Dữ liệu lưu trữ)
-│   ├── serviceAccountKey.json (Firebase Key)
-│   └── KnowledgeBase.json   (Dữ liệu keyword xác định)
-├── .env                     (Biến môi trường)
-├── .gitignore
-├── AGENTS.md
-├── SCHEMA.md                (Thiết kế cấu trúc dữ liệu)
-└── requirements.txt
+/Software-to-support-form-teacher---SSFT  
+├── /app  
+│   ├── __init__.py  
+│   ├── /core                (Cấu hình & Logic hệ thống)  
+│   │   ├── Config.py        (Nạp .env & Remote Config để Bật/Tắt AI)  
+│   │   ├── Constants.py     (Lưu Role, Trạng thái vấn đề, Mức độ ưu tiên)  
+│   │   └── __init__.py  
+│   ├── /features            (Tính năng nghiệp vụ)  
+│   │   ├── /auth            (Tài khoản, Mật khẩu & Phân quyền)  
+│   │   │   ├── AuthService.py  
+│   │   │   └── UserModels.py  
+│   │   ├── /chat            (AI Tư vấn & Tin nhắn trực tiếp)  
+│   │   │   ├── ChatProcessor.py  
+│   │   │   └── PromptTemplates.py  
+│   │   ├── /issue_manager   (Quản lý vấn đề từ SV/AI gửi tới)  
+│   │   │   ├── IssueService.py  
+│   │   │   └── PriorityLogic.py (Thuật toán sắp xếp vấn đề)  
+│   │   ├── /academic        (Quản lý Điểm số & Thông tin SV)  
+│   │   │   ├── AcademicService.py  
+│   │   │   └── GradeModels.py  
+│   │   ├── /notifications   (Thông báo & Phản hồi từ GVCN)  
+│   │   │   ├── NotificationService.py  
+│   │   │   └── AnnouncementUI.py  
+│   │   └── /analytics       (Dashboard GVCN & Đánh giá lớp)  
+│   │       └── AdvisorDashboard.py  
+│   ├── /services            (Kết nối Database/Cloud)  
+│   │   ├── __init__.py  
+│   │   ├── FirestoreHandler.py  (Lưu SV, Điểm, Tin nhắn)  
+│   │   ├── StorageHandler.py    (Lưu Ảnh minh chứng, Avatar)  
+│   │   ├── RealtimeHandler.py   (Trạng thái Chat trực tiếp)  
+│   │   └── FirebaseAuthHandler.py (Xử lý Auth)  
+│   ├── /utils               (Tiện ích dùng chung)  
+│   │   ├── __init__.py  
+│   │   ├── DateHelpers.py   (Định dạng thời gian)  
+│   │   └── Validators.py    (Kiểm tra dữ liệu đầu vào)  
+│   └── main.py              (Giao diện Streamlit chính)  
+├── /data                    (Dữ liệu lưu trữ)  
+│   ├── serviceAccountKey.json (Firebase Key)  
+│   └── KnowledgeBase.json   (Dữ liệu keyword xác định)  
+├── .env                     (Biến môi trường)  
+├── .gitignore  
+├── AGENTS.md  
+├── SCHEMA.md                (Thiết kế cấu trúc dữ liệu)  
+└── requirements.txt  
