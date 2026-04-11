@@ -102,6 +102,7 @@
     * `topic`: string (Chủ đề tra cứu).
     * `doc_id`: string (id dữ liệu gốc).
     * `source`: map (nguồn dữ liệu).
+    * `chunk_index`: int (thứ tự đoạn trong tài liệu).
     * `keywords`: array (Các từ khóa liên quan).
     * `content`: string (Nội dung tri thức chính xác).
     * `updated_at`: timestamp.
