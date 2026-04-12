@@ -11,7 +11,7 @@ dist/
 
 # --- Firebase & Security (Bảo mật cực kỳ quan trọng) ---
 # Không bao giờ upload file chứa key của Firebase lên GitHub
-serviceAccountKey.json
+data/serviceAccountKey.json
 .env
 
 # --- Streamlit ---
