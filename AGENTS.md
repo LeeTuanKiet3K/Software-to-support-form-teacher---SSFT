@@ -19,7 +19,7 @@
 
 ## 1. Project Context (Bối cảnh Đồ án)
 * **Project Name**: Phần mềm hỗ trợ Giáo viên chủ nhiệm (GVCN).
-* **Core Objective**: Xây dựng hệ thống hỗ trợ GVCN quản lý, tư vấn và phân loại vấn đề của sinh viên bằng AI để giảm tải khối lượng công việc (Workload reduction).
+* **Core Objective**: Xây dựng hệ thống hỗ trợ GVCN quản lý, tư vấn và phân loại vấn đề của sinh viên bằng AI để giảm tải khối lượng công việc cho Giáo viên chủ nhiệm, nâng cao hiệu suất của hoạt động chủ nhiệm lớp.
 * **Target Users**: Sinh viên (Student) và Giáo viên chủ nhiệm (Class Advisor).
 
 ## 2. Technical Stack (Công nghệ sử dụng)
@@ -35,21 +35,37 @@
     * Phải có chú thích (Comments) bằng tiếng Việt ngay bên cạnh hoặc phía trên các thuật ngữ/logic phức tạp.
     * Ví dụ: `def authenticate_user():  # Xác thực người dùng`.
 
-## 4. Specific Feature Instructions (Chỉ dẫn tính năng cụ thể)
+### 4. Specific Feature Instructions (Chỉ dẫn tính năng cụ thể)
 
-### A. Authentication (Đăng nhập)
+#### A. Authentication (Đăng nhập)
 * Phân loại Role (Vai trò) ngay từ bước đăng nhập để dẫn vào đúng Dashboard (Bảng điều khiển) tương ứng của Sinh viên hoặc GVCN.
+* Sử dụng `ErrorCodes` từ `/core` để hiển thị thông báo lỗi tiếng Việt thân thiện khi đăng nhập thất bại (Ví dụ: "Sai mật khẩu" thay vì "auth/wrong-password").
 
-### B. AI Processor & Fallback (Xử lý AI và Chuyển tiếp)
+#### B. AI Processor & Fallback (Xử lý AI và Chuyển tiếp)
 * AI phải thực hiện **Sentiment Analysis** (Phân tích cảm xúc) và phân loại độ phức tạp của vấn đề.
 * **Auto-reply**: Trả lời các câu hỏi về quy định, thủ tục dựa trên Knowledge Base.
 * **Fallback Logic**: Với vấn đề nhạy cảm (Tâm lý, Cảm xúc, Khiếu nại), AI phải chuyển trạng thái sang "Pending Advisor" (Chờ GVCN xử lý) và tạo Notification (Thông báo) cho giáo viên.
+* Tối ưu hóa Token bằng cách sử dụng `extractKeywords` từ `StringHelpers` trước khi gửi dữ liệu cho LLM.
 
-### C. Priority Algorithm (Thuật toán Ưu tiên)
+#### C. Priority Algorithm (Thuật toán Ưu tiên)
 * Tự động sắp xếp mức độ ưu tiên (Priority level) dựa trên:
     1. Loại vấn đề (Khẩn cấp > Nhạy cảm > Thông thường).
     2. Chỉ số cảm xúc (Càng lo lắng/tiêu cực thì ưu tiên càng cao).
-    3. Thời gian thực gửi.
+    3. Thời gian thực gửi (Sử dụng `formatTimestamp` để đồng bộ dữ liệu hiển thị).
+
+#### D. Analytics & Reporting (Phân tích & Báo cáo)
+* **Teacher Insights**: Dashboard phải tập trung vào các chỉ số tình hình lớp học.
+* **Data Processing**: Sử dụng `AnalyticsHelpers` để tự động tính toán tỷ lệ chuyên cần và gom nhóm trạng thái vấn đề (Pending/Resolved).
+* **Urgent Monitoring**: Luôn hiển thị "Top Urgent Issues" ở vị trí ưu tiên cao nhất trên giao diện của GVCN.
+
+#### E. Data Validation & Security (Kiểm soát & Bảo mật)
+* **Input Integrity**: Tất cả dữ liệu đầu vào (MSSV, Email, Name) phải đi qua bộ lọc của `Validators` và `StringHelpers` trước khi tương tác với Firestore.
+* **File Management**: Mọi tệp minh chứng tải lên (giấy phép, ảnh) phải được kiểm soát định dạng và dung lượng qua `FileHelpers` để bảo vệ tài nguyên Cloud Storage.
+* **Search Optimization**: Hỗ trợ GVCN tìm kiếm tên sinh viên không dấu thông qua `removeVietnameseAccents` để tăng hiệu suất quản lý.
+
+#### F. Teacher Support Tools (Công cụ hỗ trợ GVCN)
+* **Password Support**: Cung cấp tính năng tạo mật khẩu tạm thời ngẫu nhiên qua `SecurityHelpers` khi sinh viên yêu cầu cấp lại tài khoản.
+* **Friendly Interface**: Sử dụng `Formatters` để làm tròn điểm số GPA và tóm tắt nội dung vấn đề, giúp GVCN nắm bắt thông tin nhanh chóng mà không bị quá tải dữ liệu.
 
 ## 5. Workflow for Agents (Quy trình làm việc của AI)
 1. **Plan Before Action**: Luôn tạo một **Plan Artifact** (Kế hoạch thực hiện) chi tiết trước khi tạo file hoặc viết code.
@@ -63,6 +79,7 @@
 │   ├── /core                (Cấu hình & Logic hệ thống)  
 │   │   ├── Config.py        (Nạp .env & Remote Config để Bật/Tắt AI)  
 │   │   ├── Constants.py     (Lưu Role, Trạng thái vấn đề, Mức độ ưu tiên)  
+│   │   ├── ErrorCodes.py    (Xử lý mã lỗi từ Firebase sang Tiếng Việt)  
 │   │   └── __init__.py  
 │   ├── /features            (Tính năng nghiệp vụ)  
 │   │   ├── /auth            (Tài khoản, Mật khẩu & Phân quyền)  
@@ -90,8 +107,13 @@
 │   │   └── FirebaseAuthHandler.py (Xử lý Auth)  
 │   ├── /utils               (Tiện ích dùng chung)  
 │   │   ├── __init__.py  
-│   │   ├── DateHelpers.py   (Định dạng thời gian)  
-│   │   └── Validators.py    (Kiểm tra dữ liệu đầu vào)  
+│   │   ├── DateHelpers.py      (Định dạng thời gian)  
+│   │   ├── Validators.py       (Kiểm tra dữ liệu đầu vào)  
+│   │   ├── Formatters.py       (Làm tròn điểm GPA, tóm tắt văn bản)  
+│   │   ├── AnalyticsHelpers.py  (Tính tỷ lệ chuyên cần, lọc top vấn đề cho Dashboard)  
+│   │   ├── FileHelpers.py       (Kiểm tra định dạng, dung lượng file minh chứng)  
+│   │   ├── StringHelpers.py     (Chuyển tiếng Việt không dấu, tách từ khóa cho AI)  
+│   │   └── SecurityHelpers.py   (Tạo mật khẩu tạm thời cho sinh viên)  
 │   └── main.py              (Giao diện Streamlit chính)  
 ├── /data                    (Dữ liệu lưu trữ)  
 │   ├── serviceAccountKey.json (Firebase Key)  
