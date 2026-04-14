@@ -10,13 +10,14 @@ def validateEmail(email: str) -> bool:
 
 def validatePasswordStrength(password: str) -> bool:
     """
-    Kiểm tra độ bảo mật mật khẩu (ít nhất 8 ký tự, có chữ và số).
+    Kiểm tra độ bảo mật mật khẩu (ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và chữ số).
     """
     if len(password) < 8:
         return False
-    hasLetter = re.search(r"[a-zA-Z]", password) is not None
+    hasLower = re.search(r"[a-z]", password) is not None
+    hasUpper = re.search(r"[A-Z]", password) is not None
     hasNumber = re.search(r"\d", password) is not None
-    return hasLetter and hasNumber
+    return hasLower and hasUpper and hasNumber
 
 def isValidStudentId(mssv: str) -> bool:
     """

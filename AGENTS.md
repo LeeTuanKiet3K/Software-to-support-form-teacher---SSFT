@@ -17,15 +17,18 @@
 
 *Lưu ý: Luôn ưu tiên dùng tiếng Anh cho tên biến/hàm và kèm chú thích tiếng Việt bên cạnh các thuật ngữ IT.*
 
+
 ## 1. Project Context (Bối cảnh Đồ án)
 * **Project Name**: Phần mềm hỗ trợ Giáo viên chủ nhiệm (GVCN).
 * **Core Objective**: Xây dựng hệ thống hỗ trợ GVCN quản lý, tư vấn và phân loại vấn đề của sinh viên bằng AI để giảm tải khối lượng công việc cho Giáo viên chủ nhiệm, nâng cao hiệu suất của hoạt động chủ nhiệm lớp.
 * **Target Users**: Sinh viên (Student) và Giáo viên chủ nhiệm (Class Advisor).
 
+
 ## 2. Technical Stack (Công nghệ sử dụng)
 * **Backend Language**: Python 3.10+.
 * **Database**: Firebase (Firestore) dùng làm Knowledge Base (Cơ sở tri thức) để đảm bảo tính chính xác và tránh Hallucination (AI bịa đặt). Sử dụng Firestore Realtime Listeners để cập nhật danh sách vấn đề của sinh viên ngay khi có dữ liệu mới. Ưu tiên tối ưu hóa số lượng truy vấn (Read operations) để tránh vượt quá định mức của Firebase Free Tier.
 * **Framework**: Ưu tiên các thư viện Python hiện đại để xử lý logic và kết nối Firebase (firebase-admin).
+
 
 ## 3. Architecture & Style Rules (Quy tắc Kiến trúc và Phong cách)
 * **Feature-based Structure**: Mỗi tính năng lớn phải nằm trong một folder riêng biệt tại `/app/features/`. Tuyệt đối không gộp nhiều tính năng vào một file đơn lẻ.
@@ -34,6 +37,7 @@
     * Giữ nguyên các **Technical terms** (Thuật ngữ chuyên ngành) bằng tiếng Anh.
     * Phải có chú thích (Comments) bằng tiếng Việt ngay bên cạnh hoặc phía trên các thuật ngữ/logic phức tạp.
     * Ví dụ: `def authenticate_user():  # Xác thực người dùng`.
+
 
 ### 4. Specific Feature Instructions (Chỉ dẫn tính năng cụ thể)
 
@@ -67,12 +71,36 @@
 * **Password Support**: Cung cấp tính năng tạo mật khẩu tạm thời ngẫu nhiên qua `SecurityHelpers` khi sinh viên yêu cầu cấp lại tài khoản.
 * **Friendly Interface**: Sử dụng `Formatters` để làm tròn điểm số GPA và tóm tắt nội dung vấn đề, giúp GVCN nắm bắt thông tin nhanh chóng mà không bị quá tải dữ liệu.
 
+
 ## 5. Workflow for Agents (Quy trình làm việc của AI)
 1. **Plan Before Action**: Luôn tạo một **Plan Artifact** (Kế hoạch thực hiện) chi tiết trước khi tạo file hoặc viết code.
 2. **Modular Implementation**: Triển khai từng module một. Đảm bảo cấu trúc file rõ ràng như đã thỏa thuận.
-3. **Double Check**: Sau khi viết code, kiểm tra lại xem các chú thích tiếng Việt đã đầy đủ và dễ hiểu chưa.
+3. **Legacy Code Awareness (Quét code cũ):**
+   - Trước khi triển khai một hàm (Function) hoặc tiện ích (Utility) mới, bắt buộc phải kiểm tra thư mục `/app/utils/` và `/app/services/`.
+   - Nếu hàm đã tồn tại (Ví dụ: `generateTempPassword` trong `SecurityHelpers.py`), phải **Tái sử dụng (Reuse)** thay vì viết lại.
+4. **Modular Extension (Mở rộng mô-đun):**
+   - Nếu một file đã có sẵn (Ví dụ: `FirebaseAuthHandler.py`), hãy thêm hàm vào file đó thay vì tạo file mới có chức năng tương tự.
+5. **Double Check**: Sau khi viết code, kiểm tra lại xem các chú thích tiếng Việt đã đầy đủ và dễ hiểu chưa.
 
-## 6. Folder Structure (Cấu trúc thư mục tổng hợp)
+
+## 6. Password & Security Policy (Chính sách Bảo mật & Mật khẩu)
+Để đảm bảo an toàn dữ liệu sinh viên, mọi tính năng liên quan đến xác thực phải tuân thủ:
+1. **Flexible Password Change (Đổi mật khẩu linh hoạt):**
+   - Cờ `requires_password_change` vẫn được khởi tạo là `true` cho tài khoản mới.
+   - **KHÔNG** chặn quyền truy cập (No Route Guard). Sinh viên vẫn sử dụng được hệ thống bình thường.
+   - Hệ thống chỉ hiển thị thông báo nhắc nhở (Reminder/Toast) trên giao diện cho đến khi mật khẩu được đổi.
+2. **Simplified Rules (Đơn giản hóa quy tắc):**
+   - Quyền truy cập dữ liệu chỉ phụ thuộc vào việc đăng nhập và Vai trò (Role), không phụ thuộc vào trạng thái mật khẩu.
+3. **Password Validation (Kiểm tra mật khẩu):**
+   - Sử dụng `Validators.py` để kiểm tra mật khẩu mới: Tối thiểu 8 ký tự, bao gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 ký số (Digit).
+4. **Recovery Protocol (Giao thức khôi phục):**
+   - Ưu tiên sử dụng **Firebase Password Reset Link** (Gửi link qua Email) để khôi phục mật khẩu. 
+   - Hạn chế tự quản lý mã OTP thủ công để giảm thiểu rủi ro bảo mật và lưu trữ dư thừa.
+5. **Audit Logging (Nhật ký bảo mật):**
+   - Mọi hành động đổi mật khẩu hoặc yêu cầu reset phải được ghi nhận vào collection `AI_logs` hoặc một collection `Audit_logs` riêng biệt để truy vết.
+
+
+## 7. Folder Structure (Cấu trúc thư mục tổng hợp)
 /Software-to-support-form-teacher---SSFT  
 ├── /app  
 │   ├── __init__.py  
@@ -84,7 +112,7 @@
 │   ├── /features            (Tính năng nghiệp vụ)  
 │   │   ├── /auth            (Tài khoản, Mật khẩu & Phân quyền)  
 │   │   │   ├── AuthService.py  
-│   │   │   └── UserModels.py  
+│   │   │   └── PasswordService.py  (Xử lý đổi/quên mật khẩu)  
 │   │   ├── /chat            (AI Tư vấn & Tin nhắn trực tiếp)  
 │   │   │   ├── ChatProcessor.py  
 │   │   │   └── PromptTemplates.py  
