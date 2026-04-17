@@ -1,24 +1,77 @@
-import unicodedata
 import re
 
-def removeVietnameseAccents(text: str) -> str:
+class StringHelpers:
     """
-    Chuyển tiếng Việt có dấu thành không dấu để hỗ trợ Search.
+    Lớp xử lý văn bản (String Utility Class).
+    Hỗ trợ chuẩn hóa dữ liệu đầu vào và đầu ra để giảm thiểu Hallucination của AI.
     """
-    # Chuẩn hoá NFD biến chữ cái có dấu thành chữ cái thường và dấu
-    m_normalized = unicodedata.normalize('NFD', text)
-    # Lọc bỏ các dấu
-    m_noAccents = "".join(c for c in m_normalized if not unicodedata.combining(c))
-    # Thay thế thủ công ký tự Đ và đ
-    m_noAccents = m_noAccents.replace("đ", "d").replace("Đ", "D")
-    return m_noAccents
 
-def extractKeywords(text: str) -> list:
-    """
-    Tách từ khóa chính để hỗ trợ AI Processor, bỏ qua dấu câu chuyên ngành.
-    """
-    # Xoá dấu câu, lấy từ dài hơn 2 ký tự làm từ khoá
-    m_cleanText = re.sub(r'[^\w\s]', '', text)
-    m_words = m_cleanText.split()
-    m_keywords = [word.lower() for word in m_words if len(word) > 2]
-    return list(set(m_keywords))
+    @staticmethod
+    def cleanText(text: str) -> str:
+        """
+        Loại bỏ ký tự đặc biệt, chuẩn hóa văn bản (Text Normalization).
+        Bảo vệ JSON payload không bị phá vỡ.
+        
+        Args:
+            text (str): Văn bản gốc (Raw text).
+            
+        Returns:
+            str: Văn bản đã được làm sạch (Cleaned text).
+        """
+        if not text:
+            return ""
+        # Giữ lại các chữ cái, số, khoảng trắng và các dấu câu cơ bản
+        cleanedText = re.sub(r'[^\w\s\.,\?!\-]', '', text)
+        # Loại bỏ khoảng trắng thừa (Remove extra spaces)
+        cleanedText = re.sub(r'\s+', ' ', cleanedText).strip()
+        return cleanedText
+
+    @staticmethod
+    def extractKeywords(text: str) -> str:
+        """
+        Trích xuất các từ khóa chính từ câu hỏi của sinh viên (Keyword Extraction).
+        (Sẽ được gọi bởi Llama 3 trong module sau để Token Optimization).
+        
+        Args:
+            text (str): Văn bản truy vấn (Query text).
+            
+        Returns:
+            str: Chuỗi các từ khóa cốt lõi, cách nhau bởi khoảng trắng.
+        """
+        if not text:
+            return ""
+            
+        # Cơ bản: Lọc stop words đơn giản có trong tiếng Việt (Stopword Filtering)
+        stopWords = {"là", "của", "và", "những", "các", "có", "không", "ở", "vào", "ra", "thì", "mà", "bị", "bởi"}
+        
+        # Tiền xử lý: Viết thường, loại bỏ dấu câu (Preprocessing)
+        textNoPunctuation = re.sub(r'[^\w\s]', '', text.lower())
+        words = textNoPunctuation.split()
+        
+        keywords = [word for word in words if word not in stopWords and len(word) > 1]
+        
+        # Ghép lại thành một chuỗi (Serialized string)
+        return " ".join(keywords)
+
+    @staticmethod
+    def formatResponse(text: str) -> str:
+        """
+        Định dạng lại văn bản (Text Formatting) để hiển thị chuyên nghiệp trên UI.
+        
+        Args:
+            text (str): Văn bản phản hồi thô từ AI (Raw response).
+            
+        Returns:
+            str: Văn bản đã được format cấu trúc chuẩn.
+        """
+        if not text:
+            return ""
+            
+        # Chuẩn hóa khoảng trống (Normalize spacing)
+        formattedText = text.replace('\n\n\n', '\n\n').strip()
+        
+        # Đảm bảo chữ cái đầu tiên luôn được viết hoa (Capitalize first letter)
+        if len(formattedText) > 0:
+            formattedText = formattedText[0].upper() + formattedText[1:]
+            
+        return formattedText

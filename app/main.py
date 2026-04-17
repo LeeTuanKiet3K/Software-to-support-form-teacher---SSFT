@@ -1,167 +1,232 @@
 import sys
 import os
-# Đưa thư mục gốc (chứa thư mục app) vào đường dẫn ưu tiên để Python hiểu 'app' là một module
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Tự động cấu hình đường dẫn root của dự án để tránh lỗi "No module named 'app'"
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 
 import streamlit as st
-from streamlit_chat import message
-from app.services.FirestoreHandler import FirebaseHandler
-from app.features.chat.ChatProcessor import processStudentMessage
+import traceback
 
-# Khởi tạo đối tượng Firebase Handler (Singleton context giả lập)
-@st.cache_resource
-def getFirebaseHandler():
-    return FirebaseHandler()
+from app.core.Constants import UserRole, IssueStatus
+from app.services.FirebaseAuthHandler import FirebaseAuthHandler
+from app.core.Middleware import Middleware
+from app.features.chat.ResponseAggregator import ResponseAggregator
+from app.services.IssueService import IssueService
 
-firebaseHandler = getFirebaseHandler()
-
-# Cấu hình cài đặt trang web mặc định (Page configuration)
-st.set_page_config(page_title="Hệ thống Hỗ trợ GVCN", page_icon="🎓", layout="wide")
-
-# Khởi tạo các biến trong Session State nếu chưa có
-if 'user_role' not in st.session_state:
-    st.session_state['user_role'] = None
-if 'username' not in st.session_state:
-    st.session_state['username'] = None
-# Lưu trữ lịch sử chat tạm thời trong phiên (Temporary chat history)
-if 'messages' not in st.session_state:
-    st.session_state['messages'] = []
-
-def loginScreen():
-    """
-    Giao diện màn hình đăng nhập.
-    """
-    st.title("🎓 Cổng thông tin Hỗ trợ Giáo viên Chủ nhiệm")
-    st.subheader("Đăng nhập hệ thống (Login)")
+# --- TRẠNG THÁI HỆ THỐNG (STATE MANAGEMENT) ---
+def initializeState():
+    """Khởi tạo trạng thái phiên làm việc (Session Variables Init)."""
+    if 'm_isLoggedIn' not in st.session_state:
+        st.session_state.m_isLoggedIn = False
+    if 'm_currentUserData' not in st.session_state:
+        st.session_state.m_currentUserData = None
+    if 'm_chatId' not in st.session_state:
+        st.session_state.m_chatId = None
+    if 'm_interfaceHistory' not in st.session_state:
+        st.session_state.m_interfaceHistory = []
     
-    with st.form(key="login_form"):
-        email = st.text_input("Email", placeholder="Ví dụ: student@school.edu.vn")
-        password = st.text_input("Mật khẩu", type="password")
-        submitButton = st.form_submit_button(label="Đăng nhập")
-        
-    if submitButton:
-        if email and password:
-            role = firebaseHandler.verifyLogin(email, password)
-            if role:
-                st.session_state['user_role'] = role
-                st.session_state['username'] = email.split("@")[0]
-                st.success("Đăng nhập thành công! Đang chuyển hướng...")
-                st.rerun()
-            else:
-                st.error("Email hoặc Mật khẩu không chính xác.")
-        else:
-            st.warning("Vui lòng nhập đầy đủ thông tin.")
+    # Khởi tạo các Instances dịch vụ (Service singletons)
+    if 'm_authHandler' not in st.session_state:
+        st.session_state.m_authHandler = FirebaseAuthHandler()
+    if 'm_middleware' not in st.session_state:
+        st.session_state.m_middleware = Middleware()
+    if 'm_aggregator' not in st.session_state:
+        st.session_state.m_aggregator = ResponseAggregator()
+    if 'm_issueService' not in st.session_state:
+        st.session_state.m_issueService = IssueService()
 
-def studentChatInterface():
-    """
-    Giao diện Chat dành cho Sinh viên (Student View).
-    """
-    st.title(f"Chào mừng {st.session_state['username']}! 👋")
-    st.caption("AI Assistant sẵn sàng hỗ trợ các vấn đề thủ tục, quy chế và tư vấn tâm lý.")
+# --- MODULE: XÁC THỰC (AUTHENTICATION UI) ---
+def renderLoginWindow():
+    """Hiển thị Giao diện Xác thực (Authentication View)."""
+    st.title("🎓 SSFT: AI Trợ lý Cố Vấn Học Tập")
+    st.markdown("---")
     
-    # Nút Đăng xuất
-    if st.sidebar.button("Đăng xuất (Logout)"):
-         st.session_state['user_role'] = None
-         st.session_state['messages'] = []
-         st.rerun()
-         
-    # Container lưu giữ và hiển thị lịch sử đoạn chat
-    chatContainer = st.container()
-    
-    # Input field cho User
-    with st.form(key="chat_form", clear_on_submit=True):
-        col1, col2 = st.columns([8, 1])
-        with col1:
-            userInput = st.text_input("Bạn đang gặp vấn đề gì?", label_visibility="collapsed")
-        with col2:
-            submitBtn = st.form_submit_button("Gửi 🚀")
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        st.write("Vui lòng đăng nhập hệ thống (System Sign In)")
+        with st.form("loginForm"):
+            email = st.text_input("Địa chỉ Email (Email)")
+            password = st.text_input("Mật khẩu (Password)", type="password")
+            submitBtn = st.form_submit_button("Tiếp tục (Continue)", use_container_width=True)
             
-    if submitBtn and userInput:
-        # 1. Thêm câu hỏi của user vào danh sách
-        st.session_state['messages'].append({"content": userInput, "is_user": True})
-        
-        # 2. Xử lý qua Chat Processor
-        with st.spinner("AI đang xử lý..."):
-            aiResponse = processStudentMessage(
-                studentIdOrName=st.session_state['username'],
-                issueText=userInput,
-                firebaseHandler=firebaseHandler
-            )
-            
-        # 3. Thêm phản hồi của AI vào danh sách
-        st.session_state['messages'].append({"content": aiResponse, "is_user": False})
-        
-        # Reload để hiển thị tin nhắn mới ngay lập tức
-        st.rerun()
-        
-    # Render các tin nhắn trong container (Từ cũ đến mới)
-    with chatContainer:
-        if not st.session_state['messages']:
-            st.info("Bắt đầu cuộc trò chuyện bằng cách nhập câu hỏi ở bên dưới.")
-            
-        for i, msg in enumerate(st.session_state['messages']):
-            # Hàm message() của streamlit_chat sẽ tạo ra giao diện bong bóng thoại
-            message(msg["content"], is_user=msg["is_user"], key=f"msg_{i}")
+            if submitBtn:
+                if not email or not password:
+                    st.warning("Thông tin chưa đầy đủ (Missing credentials).")
+                    return
+                    
+                with st.spinner("Đang mã hóa & xác thực (Authenticating...)"):
+                    authResult = st.session_state.m_authHandler.signIn(email, password)
+                    if authResult.get("success"):
+                        # Trích xuất payload xác thực (Extract Auth Payload)
+                        tokenData = authResult.get("data")
+                        idToken = tokenData.get("idToken")
+                        
+                        # Giải mã JWT để móc nối thông tin (Decode JWT Info)
+                        userObj = st.session_state.m_authHandler.getCurrentUser(idToken)
+                        
+                        if userObj:
+                            st.session_state.m_isLoggedIn = True
+                            st.session_state.m_currentUserData = userObj
+                            
+                            # Cấu hình Role giả lập qua email do Auth Firebase chưa set custom claim
+                            # Tính năng này hoạt động tốt với Workflow (Role mapping step)
+                            emailLower = email.lower()
+                            if "advisor" in emailLower or "gv" in emailLower:
+                                st.session_state.m_currentUserData['role'] = UserRole.ADVISOR
+                            else:
+                                st.session_state.m_currentUserData['role'] = UserRole.STUDENT
+                                
+                            # Thiết lập mã trò chuyện theo UID hoặc email (Session Tracking)
+                            st.session_state.m_chatId = userObj.get('uid', email)
+                            st.rerun()
+                        else:
+                            st.error("Khóa ký bảo mật không chính xác (Token Expired).")
+                    else:
+                        st.error(authResult.get("error"))
 
-def advisorDashboardInterface():
-    """
-    Bảng điều khiển (Dashboard) dành cho GVCN.
-    Hiển thị các issues cần xử lý, sắp xếp theo mức độ ưu tiên.
-    """
-    st.title(f"Bảng điều khiển GVCN (Advisor Dashboard) - {st.session_state['username']}")
+# --- MODULE: CHAT AI (CONVERSATIONAL INTERFACE) ---
+def renderChatWindow():
+    """Giao diện Cửa sổ Trò chuyện Học sinh & Cố vấn (Chat Interface)."""
+    st.header("💬 Khu vực Trợ lý Thông minh (AI Companion)")
+    st.info("Trợ lý có thể dẫn đường bạn qua các thủ tục, giải đáp thắc mắc, hoặc gửi cảnh báo lên GVCN.")
     
-    if st.sidebar.button("Đăng xuất (Logout)"):
-         st.session_state['user_role'] = None
-         st.rerun()
-         
-    st.header("📋 Danh sách các vấn đề sinh viên cần xử lý")
-    
-    with st.spinner("Đang tải dữ liệu từ cơ sở dữ liệu (Fetching data)..."):
-        issues = firebaseHandler.getIssues()
-        
-    if not issues:
-        st.success("Tuyệt vời! Hiện tại không có vấn đề nào cần giải quyết.")
-    else:
-        # Render từng issue thành các thẻ hiển thị (Expanders)
-        for issue in issues:
-            priority = issue.get("priority_level", "P2")
-            student = issue.get("student", "Unknown")
-            status = issue.get("status", "Pending")
-            text = issue.get("issue_text", "")
-            
-            # Tùy chỉnh màu sắc tiêu đề dựa trên độ ưu tiên (Visual cues)
-            if priority == "P0":
-                header = f"🚨 [P0 - KHẨN CẤP] {student}"
-            elif priority == "P1":
-                header = f"⚠️ [P1 - KHIẾU NẠI] {student}"
-            else:
-                header = f"ℹ️ [P2 - THÔNG THƯỜNG] {student}"
-                
-            with st.expander(header, expanded=(priority == "P0")):
-                st.markdown(f"**Trạng thái:** `{status}`")
-                st.markdown(f"**Nội dung chi tiết:**")
-                st.info(text)
-                
-                # Nút mô phỏng Mark as resolved (chức năng này có thể phát triển sau)
-                if st.button("Đánh dấu đã xử lý", key=f"resolve_{issue.get('issue_id')}"):
-                    st.toast(f"Tính năng chưa được liên kết DB: Trạng thái của ticket {issue.get('issue_id')} được đổi trên local.", icon="👌")
-                    # (To-Do: Tích hợp hàm cập nhật firebase_handler.resolve_issue() tại đây)
+    # Lịch sử hiển thị UI (UI State Loop)
+    for msg in st.session_state.m_interfaceHistory:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+            if "actions" in msg and msg["actions"]:
+                st.caption(f"🚀 **Thao tác nhanh:** {', '.join(msg['actions'])}")
 
+    # Nhận hiệu lệnh mới (Input listener)
+    userInput = st.chat_input("Gõ vấn đề bạn quan tâm (Ví dụ: Form điểm danh)...")
+    if userInput:
+        # Cập nhật hiển thị lập tức (Echo signal)
+        st.session_state.m_interfaceHistory.append({"role": "user", "content": userInput})
+        with st.chat_message("user"):
+            st.markdown(userInput)
+            
+        # Kích hoạt xương sống Hybrid AI (Activate AI Backbone)
+        with st.chat_message("assistant"):
+            with st.spinner("AI đang tính toán dữ liệu (Processing RAG)..."):
+                try:
+                    middleware = st.session_state.m_middleware
+                    aggregator = st.session_state.m_aggregator
+                    issueSvc = st.session_state.m_issueService
+                    chatId = st.session_state.m_chatId
+                    userId = st.session_state.m_currentUserData.get("email")
+                    
+                    # 1. Quét cảm xúc để đề phòng nguy ngập (Risk Analysis via Llama)
+                    analysisParams = middleware.callLocalLlama(userInput)
+                    
+                    # 2. Sinh Ticket quản lý cho Giáo viên nếu có URGENT/HIGH (Automatic Escalation)
+                    issueSvc.createIssueFromChat(chatId, userId, analysisParams)
+                    
+                    # 3. Chạy quá trình truy vấn đám mây (Cloud Orchestration)
+                    rawAnswer = middleware.coordinateFlow(studentMessage=userInput, chatId=chatId)
+                    
+                    # 4. Gắn thêm Action Button ảo và Markdown References (Response Aggregation)
+                    finalAnswer = aggregator.formatFinalResponse(rawAnswer)
+                    quickActTags = aggregator.generateQuickActions(analysisParams.get("intent"))
+                    
+                    # In thực tế vào Bong bóng (Render Blob)
+                    st.markdown(finalAnswer)
+                    if quickActTags:
+                        st.caption(f"🚀 **Đề xuất truy cập:** {', '.join(quickActTags)}")
+                    
+                    # Giữ bản sao màn hình (Save Render State)
+                    st.session_state.m_interfaceHistory.append({
+                        "role": "assistant", 
+                        "content": finalAnswer,
+                        "actions": quickActTags
+                    })
+                    
+                except Exception as sysErr:
+                    st.error("Cổng nối suy luận đang ngập tải. Bạn chờ một lát rồi kết nối lại nhé!")
+                    st.write(f"Vết chẩn đoán kỹ thuật (Traceback): {sysErr}")
+
+# --- MODULE: BẢNG THEO DÕI NÂNG CAO (ADVISOR DASHBOARD) ---
+def renderAdvisorDashboard():
+    """Giao diện Quản trị của Giáo Viên (Advisor Issue Tracker)."""
+    st.header("📊 Bộ theo dõi Vấn đề Khẩn (Issue Tracker)")
+    
+    # Truy xuất dữ liệu thời gian chìm (Fetch Backend Tasks)
+    pendingTasks = st.session_state.m_issueService.getPendingIssues()
+    
+    if not pendingTasks:
+        st.success("Tuyệt vời! Không phát hiện lỗ hổng hay vấn đề khẩn cấp nào (No pending issues).")
+        return
+        
+    st.write(f"Máy dò thấy **{len(pendingTasks)}** báo động cần duyệt.")
+    
+    # Hiển thị lặp Ticket dưới dạng Cards (Card Iteration)
+    for idx, ticket in enumerate(pendingTasks):
+        tId = ticket.get("issue_id", f"UNKNOWN-{idx}")
+        lvl = ticket.get("priority", "N/A")
+        emotion = ticket.get("sentiment", "N/A")
+        statusFlag = ticket.get("status", IssueStatus.OPEN)
+        studentStr = ticket.get("student_id", "Ẩn danh")
+        sessionKey = ticket.get("chat_id")
+        
+        # Nhãn hiệu HTML/màu sắc (Color Metrics)
+        colorMap = {"URGENT": "red", "HIGH": "orange", "MEDIUM": "blue", "LOW": "green"}
+        badgeColor = colorMap.get(lvl, "gray")
+        
+        with st.expander(f"🛑 [Mức: {lvl}] Tín hiệu từ: {studentStr} | Trạng thái: {statusFlag}"):
+            st.markdown(f"**Gắn cờ sự cố (Priority):** :{badgeColor}[{lvl}]")
+            st.markdown(f"**Trạng thái tâm sinh lý (Emotion Profile):** {emotion}")
+            
+            # Khởi động dịch vụ giải mã tóm tắt bí mật (Call Context Summarizer)
+            aggregatorObj = st.session_state.m_aggregator
+            secretIntel = aggregatorObj.createSummaryForAdvisor(sessionKey)
+            
+            st.info(f"**AI Tóm lược cốt lõi (Core Intel):** {secretIntel.get('secret_summary')}")
+            
+            # Hệ nút quản trị (Resolution Workflow Button)
+            if statusFlag != IssueStatus.RESOLVED:
+                if st.button("Ngắt báo động / Bấm Đã Xử Lý (Resolve Ticket)", key=f"btn_res_{tId}"):
+                    updateCheck = st.session_state.m_issueService.updateIssueStatus(tId, IssueStatus.RESOLVED)
+                    if updateCheck:
+                        st.success("Tín hiệu đã được xử lý (Trigger Cleared). File sẽ nạp lại.")
+                        st.rerun()
+                    else:
+                        st.error("Báo lỗi kết nối CSDL (DB Push Fail).")
+
+# --- HÀM MAIN: TẬP TRUNG KHUNG LEO (FRONTEND MOUNTS) ---
 def main():
-    """
-    Luồng điều hướng cốt lõi (Main routing flow)
-    """
-    role = st.session_state['user_role']
+    """Gốc kết xuất màn hình hệ thống (Core Mount Context)."""
+    st.set_page_config(page_title="AI: Cố vấn thông minh SSFT", page_icon="🎓", layout="wide")
+    initializeState()
     
-    if role is None:
-        loginScreen()
-    elif role == "student":
-        studentChatInterface()
-    elif role == "advisor":
-        advisorDashboardInterface()
+    if not st.session_state.m_isLoggedIn:
+        renderLoginWindow()
     else:
-        st.error("Phân quyền không hợp lệ. Vui lòng thử lại.")
-        st.session_state['user_role'] = None
+        userRole = st.session_state.m_currentUserData.get('role', UserRole.STUDENT)
+        uid = st.session_state.m_currentUserData.get('uid', 'System')
+        
+        # Thanh bên phân bổ chức năng (Navigation Sidebar)
+        with st.sidebar:
+            st.subheader(f"Xin chào, {st.session_state.m_currentUserData.get('email')}")
+            st.caption(f"Chức vụ truy cập (Role Profile): {userRole}")
+            st.markdown("---")
+            
+            # Nút tắt phiên (Sign out killswitch)
+            if st.button("Thoát (Sign Out)", use_container_width=True):
+                st.session_state.m_authHandler.signOut(uid)
+                st.session_state.clear()
+                st.rerun()
+        
+        # Định hình View dựa theo Phân quyền Role (Role Layout Dispatcher)
+        if userRole == UserRole.ADVISOR:
+            tabStats, tabConvo = st.tabs(["🚦 Dashboard (Trạm QL)", "💬 Trợ lý Bot (Convo)"])
+            with tabStats:
+                renderAdvisorDashboard()
+            with tabConvo:
+                renderChatWindow()
+        else:
+            renderChatWindow()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
