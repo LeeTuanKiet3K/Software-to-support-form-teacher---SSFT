@@ -2,6 +2,7 @@ import google.generativeai as genai
 from typing import List, Dict, Any
 from app.core.Config import AppConfig
 from app.services.FirestoreHandler import FirestoreHandler
+from app.features.chat.PromptTemplates import PROMPT_CONTEXT_SUMMARIZATION
 
 class ContextManager:
     """
@@ -91,7 +92,7 @@ class ContextManager:
             oldMessages = historyList[:-4]
             contextBody = "\n".join([f"{msg['role']}: {msg['content']}" for msg in oldMessages])
             
-            promptInjection = f"Hãy tóm tắt ngắn gọn hội thoại này thành 1-2 câu để làm ngữ cảnh nền tảng cho trợ lý AI:\n{contextBody}"
+            promptInjection = PROMPT_CONTEXT_SUMMARIZATION.format(context_body=contextBody)
             
             # Phát sinh kết quả song song (Background Generation)
             response = self.m_geminiModel.generate_content(promptInjection)

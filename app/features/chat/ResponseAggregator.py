@@ -50,7 +50,7 @@ class ResponseAggregator:
 
     def generateQuickActions(self, intent: str) -> List[str]:
         """
-        Dựa vào Intent phân loại bởi Llama 3 để đề xuất thẻ bấm thao tác nhanh (Quick Actions).
+        Dựa vào Intent phân loại bởi Gemini để đề xuất thẻ bấm thao tác nhanh (Quick Actions).
         Chuyển đổi luồng người dùng thành Actions ngay trong Chat UI.
         
         Args:

@@ -37,6 +37,7 @@
     * Giữ nguyên các **Technical terms** (Thuật ngữ chuyên ngành) bằng tiếng Anh.
     * Phải có chú thích (Comments) bằng tiếng Việt ngay bên cạnh hoặc phía trên các thuật ngữ/logic phức tạp.
     * Ví dụ: `def authenticate_user():  # Xác thực người dùng`.
+* **Global Error Handling (Xử lý lỗi toàn cục)**: Mọi thao tác kết nối ngoại vi (Firebase, Gemini API...) bắt buộc nằm trong khối `try...except`. Bắt cụ thể các loại exception (VD: `FirebaseError`) thay vì dùng `Exception` chung chung. Luôn ghi log lỗi chi tiết trước khi trả thông báo lỗi ra giao diện.
 
 
 ### 4. Specific Feature Instructions (Chỉ dẫn tính năng cụ thể)
@@ -50,6 +51,9 @@
 * **Auto-reply**: Trả lời các câu hỏi về quy định, thủ tục dựa trên Knowledge Base.
 * **Fallback Logic**: Với vấn đề nhạy cảm (Tâm lý, Cảm xúc, Khiếu nại), AI phải chuyển trạng thái sang "Pending Advisor" (Chờ GVCN xử lý) và tạo Notification (Thông báo) cho giáo viên.
 * Tối ưu hóa Token bằng cách sử dụng `extractKeywords` từ `StringHelpers` trước khi gửi dữ liệu cho LLM.
+* **Prompt Engineering Constraints**: 
+    * Toàn bộ system prompt phải được định nghĩa và quản lý tập trung ở `/app/features/chat/PromptTemplates.py`.
+    * Đối với những module có chức năng tính toán hoặc phân loại ngầm, luôn ép kiểu LLM trả về cấu trúc dễ định dạng (ví dụ trả về nguyên gốc dạng JSON) để tránh làm lệch Data Pipeline.
 
 #### C. Priority Algorithm (Thuật toán Ưu tiên)
 * Tự động sắp xếp mức độ ưu tiên (Priority level) dựa trên:
@@ -99,8 +103,19 @@
 5. **Audit Logging (Nhật ký bảo mật):**
    - Mọi hành động đổi mật khẩu hoặc yêu cầu reset phải được ghi nhận vào collection `AI_logs` hoặc một collection `Audit_logs` riêng biệt để truy vết.
 
+## 7. Environment Variables (.env) 
+Để hệ thống khởi chạy an toàn không rò rỉ bảo mật và không gặp lỗi kết nối, phải kiểm soát cấu hình gốc thông qua file `.env`. Cần liệt kê hoặc tạo `.env.example` với các key thiết yếu:
+* `FIREBASE_CERT_PATH`: Nơi lưu file `serviceAccountKey.json`.
+* `GEMINI_API_KEY`: API Key để kết nối mô hình Google Gemini.
+* `ENVIRONMENT`: Phân biệt môi trường (Ví dụ: `development` hoặc `production`). 
 
-## 7. Folder Structure (Cấu trúc thư mục tổng hợp)
+
+## 8. Testing Rules (Quy tắc kiểm thử)
+* Luôn đảm bảo các logic xử lý khối lượng dữ liệu phức tạp (như `PriorityLogic`) và hành vi của AI có cơ chế theo vết (track input/output). 
+* AI phải thêm các lệnh log (print / logging) ghi nhận trạng thái ở các block tính toán quan trọng để hỗ trợ người dùng chẩn đoán và khắc phục sự cố.
+
+
+## 9. Folder Structure (Cấu trúc thư mục tổng hợp)
 /Software-to-support-form-teacher---SSFT  
 ├── /app  
 │   ├── __init__.py  
@@ -108,6 +123,7 @@
 │   │   ├── Config.py        (Nạp .env & Remote Config để Bật/Tắt AI)  
 │   │   ├── Constants.py     (Lưu Role, Trạng thái vấn đề, Mức độ ưu tiên)  
 │   │   ├── ErrorCodes.py    (Xử lý mã lỗi từ Firebase sang Tiếng Việt)  
+│   │   ├── Middleware.py    (Kiểm soát điều hướng và vòng luân chuyển request)  
 │   │   └── __init__.py  
 │   ├── /features            (Tính năng nghiệp vụ)  
 │   │   ├── /auth            (Tài khoản, Mật khẩu & Phân quyền)  
@@ -115,6 +131,8 @@
 │   │   │   └── PasswordService.py  (Xử lý đổi/quên mật khẩu)  
 │   │   ├── /chat            (AI Tư vấn & Tin nhắn trực tiếp)  
 │   │   │   ├── ChatProcessor.py  
+│   │   │   ├── ContextManager.py  (Quản lý ngữ cảnh và lịch sử chat)  
+│   │   │   ├── ResponseAggregator.py (Tổng hợp kết quả phản hồi của AI)  
 │   │   │   └── PromptTemplates.py  
 │   │   ├── /issue_manager   (Quản lý vấn đề từ SV/AI gửi tới)  
 │   │   │   ├── IssueService.py  
@@ -132,7 +150,8 @@
 │   │   ├── FirestoreHandler.py  (Lưu SV, Điểm, Tin nhắn)  
 │   │   ├── StorageHandler.py    (Lưu Ảnh minh chứng, Avatar)  
 │   │   ├── RealtimeHandler.py   (Trạng thái Chat trực tiếp)  
-│   │   └── FirebaseAuthHandler.py (Xử lý Auth)  
+│   │   ├── FirebaseAuthHandler.py (Xử lý Auth)  
+│   │   └── IssueService.py        (Xử lý nghiệp vụ vấn đề vào DB - có nguy cơ trùng lặp)  
 │   ├── /utils               (Tiện ích dùng chung)  
 │   │   ├── __init__.py  
 │   │   ├── DateHelpers.py      (Định dạng thời gian)  
@@ -141,7 +160,8 @@
 │   │   ├── AnalyticsHelpers.py  (Tính tỷ lệ chuyên cần, lọc top vấn đề cho Dashboard)  
 │   │   ├── FileHelpers.py       (Kiểm tra định dạng, dung lượng file minh chứng)  
 │   │   ├── StringHelpers.py     (Chuyển tiếng Việt không dấu, tách từ khóa cho AI)  
-│   │   └── SecurityHelpers.py   (Tạo mật khẩu tạm thời cho sinh viên)  
+│   │   ├── SecurityHelpers.py   (Tạo mật khẩu tạm thời cho sinh viên)  
+│   │   └── SearchEngine.py      (Hỗ trợ tìm kiếm sinh viên/vấn đề toàn diện)  
 │   └── main.py              (Giao diện Streamlit chính)  
 ├── /data                    (Dữ liệu lưu trữ)  
 │   ├── serviceAccountKey.json (Firebase Key)  

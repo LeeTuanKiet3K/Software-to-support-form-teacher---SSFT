@@ -2,6 +2,7 @@ import os
 import google.generativeai as genai
 from app.services.FirestoreHandler import FirebaseHandler
 from app.features.issue_manager.PriorityLogic import classifyAndPrioritize
+from app.features.chat.PromptTemplates import SYSTEM_PROMPT_ADVISOR
 
 def processStudentMessage(studentIdOrName: str, issueText: str, firebaseHandler: FirebaseHandler) -> str:
     """
@@ -50,14 +51,7 @@ def processStudentMessage(studentIdOrName: str, issueText: str, firebaseHandler:
             contextStr += f"- {title}: {content}\n"
             
     # Thiết lập System Prompt / Instruction
-    systemPrompt = (
-        "Bạn là một trợ lý AI hỗ trợ Giáo viên chủ nhiệm (GVCN) trả lời các câu hỏi thủ tục, quy chế cho sinh viên. "
-        "Hãy luôn trả lời một cách thân thiện, chính xác và chuyên nghiệp. "
-        "Chỉ sử dụng những thông tin được cung cấp trong Cơ sở tri thức dưới đây để trả lời.\n\n"
-        f"Cơ sở tri thức (Knowledge Base):\n{contextStr}\n\n"
-        "Nếu sinh viên hỏi thông tin nằm ngoài cơ sở tri thức này, hãy đáp lại: "
-        "'Xin lỗi, trợ lý hiện chưa có thông tin về vấn đề này. Bạn vui lòng liên hệ GVCN trực tiếp nhé.'\n"
-    )
+    systemPrompt = SYSTEM_PROMPT_ADVISOR.format(context_str=contextStr)
     
     # Cấu hình AI Model (Setup AI Model)
     genai.configure(api_key=apiKey)
