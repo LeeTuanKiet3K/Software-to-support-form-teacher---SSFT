@@ -123,3 +123,13 @@
     * `target_id`: string (Đối tượng bị tác động).
     * `metadata`: map (Dữ liệu bổ sung).
     * `created_at`: timestamp (Thời gian ghi nhận).
+
+
+
+### (GLOBAL CONSTRAINTS)
+Để đảm bảo database không bị rác và lỗi cấu trúc, tất cả các module khi gọi `FirestoreHandler` phải tuân thủ:
+1. **Thời gian (Timestamps):** Tuyệt đối không lưu thời gian dạng chuỗi string (vd: "25/04/2026"). Hàm `saveDocument` đã tự động sinh `created_at` và `updated_at` theo chuẩn `timezone.utc`.
+2. **Khóa chính (Document ID):** - Bảng `Users`: dùng UID trả về từ Firebase Auth.
+   - Bảng `Academic_records`: dùng Mã số sinh viên.
+   - Các bảng khác (`Issues`, `Responses`...): Để `documentId=None` cho Firestore tự sinh mã ngẫu nhiên.
+3. **Kiểu dữ liệu:** Các field số (như `gpa`, `student_count`) phải được ép kiểu Int/Float trước khi lưu, không lưu dạng String.

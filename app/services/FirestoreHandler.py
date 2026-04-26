@@ -1,5 +1,6 @@
 import os
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional, Tuple
+from datetime import datetime, timezone
 import firebase_admin
 from firebase_admin import credentials, firestore
 from app.core.Config import AppConfig
@@ -39,6 +40,10 @@ class FirestoreHandler:
         Returns:
             str: ID của document đã được lưu.
         """
+        current_time = datetime.now(timezone.utc)
+        if "created_at" not in data:
+            data["created_at"] = current_time
+        data["updated_at"] = current_time
         collectionRef = self.m_dbClient.collection(collectionName)
         
         if documentId:
@@ -49,7 +54,7 @@ class FirestoreHandler:
             savedId = docRef.id
 
         # Kiểm tra nếu là các thao tác liên quan đến AI để ghi log
-        m_aiEventTriggers = ["ai_responses", "chats", "search_queries"]
+        m_aiEventTriggers = ["AI_logs", "common_data", "responses", "issues", "knowledge_base", "ai_responses", "chats"]
         if collectionName in m_aiEventTriggers:
             self.m_logAiAction("save_document", collectionName, savedId)
 
@@ -61,7 +66,7 @@ class FirestoreHandler:
         
         Args:
             collectionName (str): Tên collection.
-            documentId (str): ID của tài liệu.
+            documentId (str): ID của tài liệu.  
             
         Returns:
             Optional[Dict]: Nội dung tài liệu hoặc None nếu không tồn tại.
@@ -74,7 +79,7 @@ class FirestoreHandler:
             if docData:
                 docData['id'] = doc.id
             # Ghi log nếu truy xuất thông tin từ AI (Log AI data retrieval)
-            if collectionName in ["knowledge_base", "ai_responses"]:
+            if collectionName in ["knowledge_base", "ai_responses", "common_data", "AI_logs"]:
                 self.m_logAiAction("get_document", collectionName, documentId)
             return docData
         return None
@@ -95,11 +100,11 @@ class FirestoreHandler:
         try:
             docRef.update(data)
             # Log AI manipulation
-            if collectionName in ["ai_responses", "chats"]:
+            if collectionName in ["ai_responses", "chats", "common_data", "AI_logs"]:
                 self.m_logAiAction("update_document", collectionName, documentId)
             return True
         except Exception as e:
-            print(f"Lỗi khi cập nhật tài liệu (Error updating document): {e}")
+            print(f"Failed to update document: {e}")
             return False
 
     def m_logAiAction(self, action: str, targetCollection: str, targetId: str) -> None:
@@ -120,4 +125,25 @@ class FirestoreHandler:
         try:
             self.m_dbClient.collection("AI_logs").add(logData)
         except Exception as e:
-            print(f"Lỗi khi ghi log AI (Failed to write AI log): {e}")
+            print(f"Failed to write AI log: {e}")
+
+    def queryDocuments(self, collectionName: str, filters: List[Tuple[str, str, Any]], limitCount: int = 100) -> List[Dict[str, Any]]:
+        query = self.m_dbClient.collection(collectionName)
+
+        for field, operator, value in filters:
+            query = query.where(filter=firestore.FieldFilter(field, operator, value))
+
+        query = query.limit(limitCount)
+
+        resultList = []
+        try:
+            docs = query.stream()
+            for doc in docs:
+                docData = doc.to_dict()
+                if docData is not None:
+                    docData['id'] = doc.id
+                    resultList.append(docData)
+        except Exception as e:
+            print(f"Fail to query documents: {e}")
+            
+        return resultList
