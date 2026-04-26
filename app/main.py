@@ -5,15 +5,22 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st
 from streamlit_chat import message
-from app.services.FirestoreHandler import FirebaseHandler
+from app.services.FirestoreHandler import FirestoreHandler
 from app.features.chat.ChatProcessor import processStudentMessage
+from app.services.RealtimeHandler import RealtimeHandler
 
 # Khởi tạo đối tượng Firebase Handler (Singleton context giả lập)
 @st.cache_resource
 def getFirebaseHandler():
     return FirebaseHandler()
 
-firebaseHandler = getFirebaseHandler()
+@st.cache_resource
+def initRealtime():
+    handler = RealtimeHandler()
+    handler.listenAcademicRecords()
+    return handler
+
+firebaseHandler = FirestoreHandler()
 
 # Cấu hình cài đặt trang web mặc định (Page configuration)
 st.set_page_config(page_title="Hệ thống Hỗ trợ GVCN", page_icon="🎓", layout="wide")
@@ -148,6 +155,7 @@ def advisorDashboardInterface():
                     # (To-Do: Tích hợp hàm cập nhật firebase_handler.resolve_issue() tại đây)
 
 def main():
+    initRealtime()
     """
     Luồng điều hướng cốt lõi (Main routing flow)
     """

@@ -1,9 +1,9 @@
 import os
 import google.generativeai as genai
-from app.services.FirestoreHandler import FirebaseHandler
+from app.services.FirestoreHandler import FirestoreHandler
 from app.features.issue_manager.PriorityLogic import classifyAndPrioritize
 
-def processStudentMessage(studentIdOrName: str, issueText: str, firebaseHandler: FirebaseHandler) -> str:
+def processStudentMessage(studentIdOrName: str, issueText: str, firebaseHandler: FirestoreHandler) -> str:
     """
     Xử lý tin nhắn của sinh viên: Phân loại mức độ ưu tiên và chuyển tiếp 
     hoặc sử dụng Gemini API để trả lời tự động dựa trên Cơ sở tri thức.

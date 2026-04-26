@@ -5,11 +5,9 @@ from app.services.FirestoreHandler import FirestoreHandler
 class NotificationService:
     """
     NotificationService (Dịch vụ gửi thông báo)
-    Chịu trách nhiệm tạo và gửi thông báo đến người dùng (GVCN).
     """
 
     def __init__(self) -> None:
-        # Khởi tạo Firestore handler (kết nối database)
         self.m_dbHandler: FirestoreHandler = FirestoreHandler()
 
     def sendAcademicAlert(self, studentId: str, alerts: List[str]) -> None:
@@ -17,10 +15,10 @@ class NotificationService:
         Gửi cảnh báo học vụ đến GVCN
 
         :param studentId: ID sinh viên
-        :param alerts: Danh sách các cảnh báo
+        :param alerts: Danh sách cảnh báo
         """
 
-        #  Lấy thông tin sinh viên
+        # 🔍 Lấy thông tin sinh viên
         student: Dict[str, Any] = self.m_dbHandler.getDocument(
             collection="Users",
             docId=studentId
@@ -31,10 +29,10 @@ class NotificationService:
 
         classId: str = student.get("class_id", "")
 
-        #  Tìm lớp để lấy advisor (GVCN)
+        # 🔍 Tìm lớp → GVCN
         classData: Dict[str, Any] = self.m_dbHandler.queryOne(
             collection="Classes",
-            field="class_name",  
+            field="class_name",
             value=classId
         )
 
@@ -43,13 +41,13 @@ class NotificationService:
 
         advisorId: str = classData.get("advisor_id", "")
 
-        #  Tạo nội dung thông báo
+        # 📝 Tạo nội dung thông báo
         content: str = (
             f"Sinh viên {student.get('full_name')} gặp vấn đề: "
             f"{', '.join(alerts)}"
         )
 
-        #  Gửi thông báo
+        # 📬 Gửi notification
         self.m_dbHandler.addDocument(
             collection="Notifications",
             data={
@@ -61,7 +59,7 @@ class NotificationService:
             }
         )
 
-        #  Ghi log hệ thống 
+        # 📜 Ghi log hệ thống
         self.m_dbHandler.addDocument(
             collection="Audit_logs",
             data={

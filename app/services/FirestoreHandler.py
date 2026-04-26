@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 # Tải các biến môi trường từ file .env (Load environment variables)
 load_dotenv()
 
-class FirebaseHandler:
+class FirestoreHandler:
     """
     Lớp xử lý kết nối Firebase (Firebase Connection Manager) cho hệ thống hỗ trợ GVCN.
     """
@@ -176,3 +176,73 @@ class FirebaseHandler:
         except Exception as e:
             print(f"Error creating user profile: {e}")
             return False
+    def getDocument(self, collection: str, docId: str) -> Optional[Dict[str, any]]:
+        """
+        Lấy một document theo ID.
+
+        Args:
+            collection (str): Tên collection.
+            docId (str): ID của document.
+
+        Returns:
+            Optional[Dict]: Dữ liệu document nếu tồn tại, ngược lại None.
+        """
+        docRef = self.m_db.collection(collection).document(docId)
+        doc = docRef.get()
+
+        if doc.exists:
+            data = doc.to_dict()
+            data["id"] = doc.id
+            return data
+
+        return None
+
+    def addDocument(self, collection: str, data: Dict[str, any]) -> str:
+        """
+        Thêm một document mới vào collection.
+
+        Args:
+            collection (str): Tên collection.
+            data (Dict): Dữ liệu cần lưu.
+
+        Returns:
+            str: ID của document vừa tạo.
+        """
+        data["created_at"] = firestore.SERVER_TIMESTAMP
+
+        _, docRef = self.m_db.collection(collection).add(data)
+
+        return docRef.id
+
+    def queryOne(self, collection: str, field: str, value: any) -> Optional[Dict[str, any]]:
+        """
+        Truy vấn lấy một document đầu tiên thỏa điều kiện.
+
+        Args:
+            collection (str): Tên collection.
+            field (str): Tên field cần query.
+            value (any): Giá trị so sánh.
+
+        Returns:
+            Optional[Dict]: Document đầu tiên nếu tìm thấy, ngược lại None.
+        """
+        query = self.m_db.collection(collection) \
+            .where(filter=firestore.FieldFilter(field, "==", value)) \
+            .limit(1) \
+            .stream()
+
+        for doc in query:
+            data = doc.to_dict()
+            data["id"] = doc.id
+            return data
+
+        return None
+
+    def getClient(self):
+        """
+        Trả về Firestore client (dùng cho RealtimeHandler).
+
+        Returns:
+            firestore.Client: Firestore instance
+        """
+        return self.m_db
