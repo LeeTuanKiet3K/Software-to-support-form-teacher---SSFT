@@ -1,9 +1,10 @@
 from typing import Dict, Any, Union, Optional
 import streamlit as st
 from app.services.FirebaseAuthHandler import FirebaseAuthHandler
-from app.services.FirestoreHandler import FirebaseHandler
+from app.services.FirestoreHandler import FirestoreHandler
 from app.utils.SecurityHelpers import generateTempPassword
 from app.core.ErrorCodes import getErrorMessage
+from app.core.Constants import UserRole
 
 class AuthService:
     """
@@ -13,7 +14,7 @@ class AuthService:
 
     def __init__(self) -> None:
         self.m_authHandler = FirebaseAuthHandler()
-        self.m_dbHandler = FirebaseHandler()
+        self.m_dbHandler = FirestoreHandler()
 
     def loginUser(self, email: str, password: str) -> Dict[str, Any]:
         """
@@ -83,7 +84,7 @@ class AuthService:
             profileData = {
                 "email": studentEmail,
                 "full_name": studentName,
-                "role": "student", # SCHEMA.md: role là "student" / "advisor" / "admin"
+                "role": UserRole.STUDENT, # SCHEMA.md: role là "student" / "advisor" / "admin"
                 "requires_password_change": True, # Force password change on first login
                 "is_active": True,
                 "avatar_url": "",

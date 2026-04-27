@@ -6,6 +6,7 @@ def getErrorMessage(errorCode: str) -> str:
         "auth/user-not-found": "Không tìm thấy người dùng.",
         "auth/wrong-password": "Sai mật khẩu.",
         "auth/email-already-in-use": "Email đã được sử dụng.",
+        "auth/email-already-exists": "Email đã tồn tại trong hệ thống.",
         "auth/invalid-email": "Email không hợp lệ.",
         "permission-denied": "Bạn không có quyền truy cập.",
         "not-found": "Không tìm thấy dữ liệu.",

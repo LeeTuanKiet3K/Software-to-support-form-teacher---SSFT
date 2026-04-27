@@ -1,6 +1,6 @@
 from typing import Optional
 from app.services.FirebaseAuthHandler import FirebaseAuthHandler
-from app.services.FirestoreHandler import FirebaseHandler
+from app.services.FirestoreHandler import FirestoreHandler
 
 class PasswordService:
     """
@@ -10,7 +10,7 @@ class PasswordService:
 
     def __init__(self) -> None:
         self.m_authHandler = FirebaseAuthHandler()
-        self.m_dbHandler = FirebaseHandler()
+        self.m_dbHandler = FirestoreHandler()
 
     def changePassword(self, uid: str, newPassword: str) -> bool:
         """
