@@ -32,15 +32,15 @@ class AcademicObserver:
 
         alerts: List[str] = []
 
-        # 🚨 Rule 1: GPA thấp
+        # Rule 1: GPA thấp
         if currentGpa < 2.0:
             alerts.append("GPA dưới 2.0")
 
-        # 🚨 Rule 2: GPA giảm mạnh
+        # Rule 2: GPA giảm mạnh
         if (prevGpa - currentGpa) >= 0.5:
             alerts.append("GPA giảm mạnh so với lần trước")
 
-        # 🚨 Rule 3: Rớt nhiều môn
+        # Rule 3: Rớt nhiều môn
         subjects: List[Dict[str, Any]] = afterData.get("subjects", [])
         failCount: int = sum(1 for s in subjects if float(s.get("score", 0)) < 5)
 
@@ -51,5 +51,5 @@ class AcademicObserver:
         if not alerts:
             return
 
-        # 👉 Gửi cảnh báo cho GVCN
+        # Gửi cảnh báo cho GVCN
         self.m_notificationService.sendAcademicAlert(studentId, alerts)

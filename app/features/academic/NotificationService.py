@@ -18,7 +18,7 @@ class NotificationService:
         :param alerts: Danh sách cảnh báo
         """
 
-        # 🔍 Lấy thông tin sinh viên
+        # Lấy thông tin sinh viên
         student: Dict[str, Any] = self.m_dbHandler.getDocument(
             collection="Users",
             docId=studentId
@@ -29,7 +29,7 @@ class NotificationService:
 
         classId: str = student.get("class_id", "")
 
-        # 🔍 Tìm lớp → GVCN
+        # Tìm lớp → GVCN
         classData: Dict[str, Any] = self.m_dbHandler.queryOne(
             collection="Classes",
             field="class_name",
@@ -41,13 +41,13 @@ class NotificationService:
 
         advisorId: str = classData.get("advisor_id", "")
 
-        # 📝 Tạo nội dung thông báo
+        # Tạo nội dung thông báo
         content: str = (
             f"Sinh viên {student.get('full_name')} gặp vấn đề: "
             f"{', '.join(alerts)}"
         )
 
-        # 📬 Gửi notification
+        # Gửi notification
         self.m_dbHandler.addDocument(
             collection="Notifications",
             data={
@@ -59,7 +59,7 @@ class NotificationService:
             }
         )
 
-        # 📜 Ghi log hệ thống
+        # Ghi log hệ thống
         self.m_dbHandler.addDocument(
             collection="Audit_logs",
             data={
