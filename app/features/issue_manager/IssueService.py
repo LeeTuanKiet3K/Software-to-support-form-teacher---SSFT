@@ -1,4 +1,3 @@
-# TODO: Implement logic here.
 # /app/features/issue_manager/IssueService.py
 import logging
 from typing import Dict, Any
