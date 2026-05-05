@@ -33,7 +33,7 @@ class ResponseAggregator:
         # Đóng đính kèm tài liệu bảo trợ tri thức (References Support)
         references = metadata.get("references", [])
         if references:
-            refStr = "\n\n📋 **Tài liệu tham khảo/Biểu mẫu (References):**\n"
+            refStr = "\n\n **Tài liệu tham khảo/Biểu mẫu (References):**\n"
             for ref in references:
                 refStr += f"- {ref}\n"
             extraTexts.append(refStr)
@@ -41,7 +41,7 @@ class ResponseAggregator:
         # Gắn kèm thông tin cố vấn học tập trong rủi ro (Advisor Fallback Logic)
         advisorContact = metadata.get("advisor_contact")
         if advisorContact:
-            contactStr = f"\n\n👨‍🏫 **Trợ lý đề xuất hãy liên hệ trực tiếp GVCN:** {advisorContact}"
+            contactStr = f"\n\n **Trợ lý đề xuất hãy liên hệ trực tiếp GVCN:** {advisorContact}"
             extraTexts.append(contactStr)
             
         # Tổng hợp các Block
