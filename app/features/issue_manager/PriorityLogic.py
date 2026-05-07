@@ -59,3 +59,15 @@ class PriorityLogic:
         
         # 5. Mức ưu tiên thấp (P2) - AI tự động giải quyết
         return ("P2", "General", False)
+
+
+def classifyAndPrioritize(issueText: str):
+    """
+    Hàm wrapper tương thích cho module ChatProcessor cũ.
+    """
+    priorityLevel, category, isFallback = PriorityLogic().determinePriority(issueText)
+    return {
+        "priorityLevel": priorityLevel,
+        "category": category,
+        "isFallback": isFallback,
+    }

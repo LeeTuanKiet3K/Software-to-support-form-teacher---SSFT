@@ -55,6 +55,12 @@ class FirebaseAuthHandler:
         except Exception as e:
             return {"success": False, "error": f"Lỗi kết nối (Connection Error): {e}"}
 
+    def signIn(self, email: str, password: str) -> Dict[str, Any]:
+        """
+        Alias tương thích ngược cho lớp UI cũ.
+        """
+        return self.signInWithEmail(email, password)
+
     def signOutUser(self, uid: str) -> bool:
         """
         Đăng xuất người dùng (User Sign Out).
@@ -68,6 +74,12 @@ class FirebaseAuthHandler:
         except Exception as e:
             print(f"Lỗi khi thu hồi token đăng xuất (Log out error): {e}")
             return False
+
+    def signOut(self, uid: str) -> bool:
+        """
+        Alias tương thích ngược cho lớp UI cũ.
+        """
+        return self.signOutUser(uid)
 
     def getCurrentUser(self, idToken: str) -> Optional[Dict[str, Any]]:
         """
