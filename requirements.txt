@@ -1,7 +1,11 @@
 # --- Web Interface (Giao diện Web) ---
 streamlit>=1.32.0
-streamlit-extras>=0.4.0
-# Lưu ý: streamlit-chat đôi khi không ổn định bằng các component mới của Streamlit 1.30+
+
+# --- API Layer (Tầng API) ---
+fastapi>=0.115.0
+uvicorn>=0.30.0
+pydantic>=2.7.0
+email-validator>=2.1.1
 
 # --- Backend & Database (Hậu tầng & Cơ sở dữ liệu) ---
 firebase-admin>=6.4.0
@@ -9,13 +13,8 @@ python-dotenv>=1.0.1
 
 # --- AI & Natural Language Processing (AI & Xử lý ngôn ngữ tự nhiên) ---
 google-generativeai>=0.4.1
-ollama>=0.1.7
 # Thay thế textblob bằng rapidfuzz để tìm kiếm từ khóa chính xác và nhanh hơn
 rapidfuzz>=3.6.2
-
-# --- Data Processing (Xử lý dữ liệu) ---
-pandas>=2.2.0
-numpy>=1.26.0
 
 # --- Utilities (Tiện ích) ---
 requests>=2.31.0

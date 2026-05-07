@@ -26,18 +26,39 @@
 
 ## 2. Technical Stack (Công nghệ sử dụng)
 * **Backend Language**: Python 3.10+.
+* **UI Runtime**: Streamlit (`app/main.py`) là entrypoint đang chạy chính.
+* **API Runtime**: FastAPI router theo phiên bản `app/api/v1/`.
 * **Database**: Firebase (Firestore) dùng làm Knowledge Base (Cơ sở tri thức) để đảm bảo tính chính xác và tránh Hallucination (AI bịa đặt). Sử dụng Firestore Realtime Listeners để cập nhật danh sách vấn đề của sinh viên ngay khi có dữ liệu mới. Ưu tiên tối ưu hóa số lượng truy vấn (Read operations) để tránh vượt quá định mức của Firebase Free Tier.
 * **Framework**: Ưu tiên các thư viện Python hiện đại để xử lý logic và kết nối Firebase (firebase-admin).
 
 
 ## 3. Architecture & Style Rules (Quy tắc Kiến trúc và Phong cách)
 * **Feature-based Structure**: Mỗi tính năng lớn phải nằm trong một folder riêng biệt tại `/app/features/`. Tuyệt đối không gộp nhiều tính năng vào một file đơn lẻ.
+* **Service First for IO**: Mọi thao tác Firebase/Auth/Storage phải đi qua lớp `/app/services/` trước, endpoint/UI không gọi DB trực tiếp.
+* **API Layer Rule**: Các file trong `/app/api/v1/endpoints/` chỉ nhận request/validate response, sau đó gọi service tương ứng.
 * **Coding Style**: Tuân thủ nghiêm ngặt chuẩn **PEP 8**. Sử dụng **Type Hinting** (Gợi ý kiểu dữ liệu) cho tất cả các function (hàm).
 * **Language Policy**: 
     * Giữ nguyên các **Technical terms** (Thuật ngữ chuyên ngành) bằng tiếng Anh.
     * Phải có chú thích (Comments) bằng tiếng Việt ngay bên cạnh hoặc phía trên các thuật ngữ/logic phức tạp.
     * Ví dụ: `def authenticate_user():  # Xác thực người dùng`.
 * **Global Error Handling (Xử lý lỗi toàn cục)**: Mọi thao tác kết nối ngoại vi (Firebase, Gemini API...) bắt buộc nằm trong khối `try...except`. Bắt cụ thể các loại exception (VD: `FirebaseError`) thay vì dùng `Exception` chung chung. Luôn ghi log lỗi chi tiết trước khi trả thông báo lỗi ra giao diện.
+
+### 3.1 Current Canonical Interfaces (Chuẩn interface hiện tại)
+Để tránh lệch chuẩn giữa code cũ/mới, khi viết mới phải ưu tiên các hàm sau:
+
+1. **FirebaseAuthHandler**
+   - Đăng nhập: `signInWithEmail(email, password)`
+   - Đăng xuất: `signOutUser(uid)`
+2. **FirestoreHandler**
+   - Ghi document: `saveDocument(collectionName, data, documentId=None)`
+   - Đọc document: `getDocument(collectionName, documentId)`
+   - Cập nhật: `updateDocument(collectionName, documentId, data)`
+   - Query nhiều bản ghi: `queryDocuments(collectionName, filters, limitCount=100)`
+3. **Issue constants**
+   - Priority: `URGENT`, `HIGH`, `MEDIUM`, `LOW`
+   - Status: `OPEN`, `IN_PROGRESS`, `RESOLVED`, `PENDING_ADVISOR`
+
+*Lưu ý:* Một số alias tương thích ngược vẫn tồn tại để hỗ trợ module cũ; không tạo alias mới nếu không thật sự cần thiết.
 
 
 ### 4. Specific Feature Instructions (Chỉ dẫn tính năng cụ thể)
@@ -105,8 +126,11 @@
 
 ## 7. Environment Variables (.env) 
 Để hệ thống khởi chạy an toàn không rò rỉ bảo mật và không gặp lỗi kết nối, phải kiểm soát cấu hình gốc thông qua file `.env`. Cần liệt kê hoặc tạo `.env.example` với các key thiết yếu:
-* `FIREBASE_CERT_PATH`: Nơi lưu file `serviceAccountKey.json`.
+* `FIREBASE_SERVICE_ACCOUNT_JSON`: Nơi lưu file `serviceAccountKey.json`.
+* `FIREBASE_WEB_API_KEY`: API key cho Firebase Identity Toolkit REST login.
 * `GEMINI_API_KEY`: API Key để kết nối mô hình Google Gemini.
+* `OLLAMA_BASE_URL`: Endpoint của Ollama local server (mặc định: `http://localhost:11434`).
+* `OLLAMA_MODEL_NAME`: Tên model local (mặc định: `llama3`).
 * `ENVIRONMENT`: Phân biệt môi trường (Ví dụ: `development` hoặc `production`). 
 
 
@@ -145,6 +169,16 @@
 │   │   │   └── AnnouncementUI.py  
 │   │   └── /analytics       (Dashboard GVCN & Đánh giá lớp)  
 │   │       └── AdvisorDashboard.py  
+│   ├── /api                 (FastAPI interface layer)  
+│   │   ├── deps.py  
+│   │   ├── exceptions.py  
+│   │   └── /v1  
+│   │       ├── api.py  
+│   │       └── /endpoints  
+│   │           ├── academic.py  
+│   │           ├── auth.py  
+│   │           ├── notifications.py  
+│   │           └── chat.py  
 │   ├── /services            (Kết nối Database/Cloud)  
 │   │   ├── __init__.py  
 │   │   ├── FirestoreHandler.py  (Lưu SV, Điểm, Tin nhắn)  

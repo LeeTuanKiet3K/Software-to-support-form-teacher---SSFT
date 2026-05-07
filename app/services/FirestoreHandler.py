@@ -26,6 +26,8 @@ class FirestoreHandler:
             firebase_admin.initialize_app(cred)
         
         self.m_dbClient = firestore.client()
+        # Alias tương thích cho code cũ dùng `m_db`.
+        self.m_db = self.m_dbClient
 
     def saveDocument(self, collectionName: str, data: Dict[str, Any], documentId: Optional[str] = None) -> str:
         """
@@ -60,7 +62,12 @@ class FirestoreHandler:
 
         return savedId
 
-    def getDocument(self, collectionName: str, documentId: str) -> Optional[Dict[str, Any]]:
+    def getDocument(
+        self,
+        collectionName: Optional[str] = None,
+        documentId: Optional[str] = None,
+        **kwargs: Any
+    ) -> Optional[Dict[str, Any]]:
         """
         Lấy dữ liệu từ Firestore (Retrieve document from Firestore).
         
@@ -71,6 +78,15 @@ class FirestoreHandler:
         Returns:
             Optional[Dict]: Nội dung tài liệu hoặc None nếu không tồn tại.
         """
+        # Hỗ trợ cả chữ ký cũ: getDocument(collection=..., docId=...)
+        if collectionName is None:
+            collectionName = kwargs.get("collection")
+        if documentId is None:
+            documentId = kwargs.get("docId")
+
+        if not collectionName or not documentId:
+            return None
+
         docRef = self.m_dbClient.collection(collectionName).document(documentId)
         doc = docRef.get()
         
@@ -147,3 +163,37 @@ class FirestoreHandler:
             print(f"Fail to query documents: {e}")
             
         return resultList
+
+    def addDocument(self, collection: str, data: Dict[str, Any]) -> str:
+        """
+        Alias tương thích ngược cho saveDocument.
+        """
+        return self.saveDocument(collectionName=collection, data=data)
+
+    def queryOne(self, collection: str, field: str, value: Any) -> Optional[Dict[str, Any]]:
+        """
+        Truy vấn một document đầu tiên theo điều kiện bằng nhau.
+        """
+        result = self.queryDocuments(
+            collectionName=collection,
+            filters=[(field, "==", value)],
+            limitCount=1,
+        )
+        return result[0] if result else None
+
+    def getUserProfile(self, uid: str) -> Optional[Dict[str, Any]]:
+        """
+        Lấy hồ sơ người dùng theo UID từ collection Users.
+        """
+        return self.getDocument(collectionName="Users", documentId=uid)
+
+    def createUserProfile(self, uid: str, profileData: Dict[str, Any]) -> bool:
+        """
+        Tạo hồ sơ người dùng theo UID vào collection Users.
+        """
+        try:
+            self.saveDocument(collectionName="Users", data=profileData, documentId=uid)
+            return True
+        except Exception as error:
+            print(f"Failed to create user profile: {error}")
+            return False

@@ -31,9 +31,11 @@ class PasswordService:
                 return False
                 
             # Update 'requires_password_change' flag using Firestore Handler
-            userRef = self.m_dbHandler.m_db.collection('Users').document(uid)
-            userRef.update({'requires_password_change': False})
-            return True
+            return self.m_dbHandler.updateDocument(
+                collectionName="Users",
+                documentId=uid,
+                data={"requires_password_change": False}
+            )
             
         except Exception as e:
             print(f"Lỗi khi đổi mật khẩu (Error changing password): {e}")
