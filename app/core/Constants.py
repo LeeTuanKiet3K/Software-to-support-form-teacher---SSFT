@@ -28,4 +28,6 @@ class WarningThresholds:
     Các ngưỡng cảnh báo học vụ.
     """
     GPA_WARNING = 2.0
+    GPA_DROP_WARNING = 0.5
+    MAX_FAILED_SUBJECTS = 2
     MAX_ABSENCES = 3

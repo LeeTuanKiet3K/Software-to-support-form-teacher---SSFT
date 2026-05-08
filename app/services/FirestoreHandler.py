@@ -246,3 +246,28 @@ class FirestoreHandler:
             firestore.Client: Firestore instance
         """
         return self.m_db
+    
+    def updateDocument(self, collection: str, docId: str, data: Dict[str, any]) -> bool:
+        """
+        Cập nhật document trong Firestore.
+
+        Args:
+            collection (str): Tên collection.
+            docId (str): ID document.
+            data (Dict): Dữ liệu cần update.
+
+        Returns:
+            bool: Trạng thái cập nhật thành công.
+        """
+
+        try:
+            docRef = self.m_db.collection(collection).document(docId)
+
+            data["updated_at"] = firestore.SERVER_TIMESTAMP
+
+            docRef.update(data)
+            return True
+
+        except Exception as e:
+            print(f"Error updating document: {e}")
+            return False
