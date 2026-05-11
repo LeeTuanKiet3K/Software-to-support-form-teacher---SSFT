@@ -19,3 +19,6 @@ numpy>=1.26.0
 
 # --- Utilities (Tiện ích) ---
 requests>=2.31.0
+
+# --- Storage (Lưu trữ) ---
+cloudinary >= 1.44.2
