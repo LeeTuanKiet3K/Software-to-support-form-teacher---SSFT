@@ -1,6 +1,7 @@
 from typing import Dict, List, Any
 from app.services.FirestoreHandler import FirestoreHandler
 from app.features.notifications.NotificationService import NotificationService
+from app.core.Constants import WarningThresholds
 
 
 class AcademicObserver:
@@ -32,24 +33,54 @@ class AcademicObserver:
 
         alerts: List[str] = []
 
-        # Rule 1: GPA thấp
-        if currentGpa < 2.0:
-            alerts.append("GPA dưới 2.0")
+        # 1: GPA thấp
+        isLowScore: bool = currentGpa < WarningThresholds.GPA_WARNING
 
-        # Rule 2: GPA giảm mạnh
-        if (prevGpa - currentGpa) >= 0.5:
-            alerts.append("GPA giảm mạnh so với lần trước")
+        if isLowScore:
+            alerts.append("GPA dưới mức cảnh báo")
 
-        # Rule 3: Rớt nhiều môn
+        # 2: GPA giảm mạnh
+        if (prevGpa - currentGpa) >= WarningThresholds.GPA_DROP_WARNING:
+            alerts.append("GPA giảm mạnh so với lần cập nhật trước")
+
+        # 3: Rớt nhiều môn
         subjects: List[Dict[str, Any]] = afterData.get("subjects", [])
-        failCount: int = sum(1 for s in subjects if float(s.get("score", 0)) < 5)
 
-        if failCount >= 2:
-            alerts.append("Rớt nhiều môn")
+        failCount: int = sum(
+            1 for subject in subjects
+            if float(subject.get("score", 0)) < 5
+        )
 
-        # Nếu không có cảnh báo → bỏ qua
+        if failCount >= WarningThresholds.MAX_FAILED_SUBJECTS:
+            alerts.append("Rớt nhiều môn học")
+
+        # Không có cảnh báo -> bỏ qua
         if not alerts:
             return
 
-        # Gửi cảnh báo cho GVCN
-        self.m_notificationService.sendAcademicAlert(studentId, alerts)
+        # Kiểm tra trạng thái AI đã hỏi thăm chưa
+        aiCheckSent: bool = afterData.get("ai_check_sent", False)
+
+        # Nếu AI chưa hỏi thăm -> ưu tiên hỗ trợ sinh viên trước
+        if not aiCheckSent:
+            self.m_notificationService.sendStudentEncouragement(studentId)
+
+            # Đánh dấu đã gửi hỏi thăm
+            self.m_dbHandler.updateDocument(
+                collection="Academic_records",
+                docId=studentId,
+                data={
+                    "is_low_score": isLowScore,
+                    "ai_check_sent": True,
+                    "student_responded": False
+                }
+            )
+
+            return
+        
+         # Nếu GPA quá thấp -> warning cho GVCN
+        if currentGpa < 1.5:
+            self.m_notificationService.sendAcademicAlert(
+                studentId,
+                alerts
+            )
