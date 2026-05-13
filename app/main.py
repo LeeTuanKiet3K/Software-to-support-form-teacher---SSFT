@@ -14,6 +14,7 @@ from app.core.Constants import UserRole, IssueStatus
 from app.services.FirebaseAuthHandler import FirebaseAuthHandler
 from app.core.Middleware import Middleware
 from app.features.chat.ResponseAggregator import ResponseAggregator
+from app.features.chat.ChatOrchestrator import ChatOrchestrator
 from app.services.IssueService import IssueService
 
 # --- TRẠNG THÁI HỆ THỐNG (STATE MANAGEMENT) ---
@@ -37,6 +38,8 @@ def initializeState():
         st.session_state.m_aggregator = ResponseAggregator()
     if 'm_issueService' not in st.session_state:
         st.session_state.m_issueService = IssueService()
+    if 'm_chatOrchestrator' not in st.session_state:
+        st.session_state.m_chatOrchestrator = ChatOrchestrator()
 
 # --- MODULE: XÁC THỰC (AUTHENTICATION UI) ---
 def renderLoginWindow():
@@ -114,22 +117,21 @@ def renderChatWindow():
                 try:
                     middleware = st.session_state.m_middleware
                     aggregator = st.session_state.m_aggregator
-                    issueSvc = st.session_state.m_issueService
+                    orchestrator = st.session_state.m_chatOrchestrator
                     chatId = st.session_state.m_chatId
                     userId = st.session_state.m_currentUserData.get("email")
-                    
-                    # 1. Quét cảm xúc để đề phòng nguy ngập (Risk Analysis via Llama)
-                    analysisParams = middleware.callLocalLlama(userInput)
-                    
-                    # 2. Sinh Ticket quản lý cho Giáo viên nếu có URGENT/HIGH (Automatic Escalation)
-                    issueSvc.createIssueFromChat(chatId, userId, analysisParams)
-                    
-                    # 3. Chạy quá trình truy vấn đám mây (Cloud Orchestration)
-                    rawAnswer = middleware.coordinateFlow(studentMessage=userInput, chatId=chatId)
-                    
-                    # 4. Gắn thêm Action Button ảo và Markdown References (Response Aggregation)
+
+                    # Luồng chuẩn: PriorityLogic (issue_manager) -> Gemini theo prompt từng mức -> ticket qua ChatIssueBridge
+                    turnResult = orchestrator.processTurn(
+                        middleware=middleware,
+                        studentMessage=userInput,
+                        chatId=chatId,
+                        studentId=userId,
+                    )
+                    rawAnswer = turnResult.get("answer", "")
+                    quickActTags = turnResult.get("quick_actions", [])
+
                     finalAnswer = aggregator.formatFinalResponse(rawAnswer)
-                    quickActTags = aggregator.generateQuickActions(analysisParams.get("intent"))
                     
                     # In thực tế vào Bong bóng (Render Blob)
                     st.markdown(finalAnswer)
