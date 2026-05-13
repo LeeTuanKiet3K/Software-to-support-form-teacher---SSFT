@@ -37,15 +37,15 @@ class AcademicService:
 
         # Kiểm tra document đã tồn tại chưa
         existingRecord = self.m_dbHandler.getDocument(
-            collection="Academic_records",
-            docId=studentId
+            collectionName="Academic_records",
+            documentId=studentId
         )
 
         # Nếu đã tồn tại -> update
         if existingRecord:
             success: bool = self.m_dbHandler.updateDocument(
-                collection="Academic_records",
-                docId=studentId,
+                collectionName="Academic_records",
+                documentId=studentId,
                 data=data
             )
 

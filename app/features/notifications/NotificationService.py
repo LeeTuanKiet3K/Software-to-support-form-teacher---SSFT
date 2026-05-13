@@ -132,3 +132,32 @@ class NotificationService:
                 }
             }
         )
+
+    def sendAdvisorReplyNotification(self, studentId: str, replyContent: str) -> None:
+        """
+        Gửi thông báo phản hồi của GVCN tới sinh viên.
+        """
+        # Notification cho sinh viên
+        self.m_dbHandler.addDocument(
+            collection="Notifications",
+            data={
+                "user_id": studentId,
+                "title": "Phản hồi từ Giáo viên chủ nhiệm",
+                "content": f"GVCN đã phản hồi vấn đề của bạn:\n{replyContent}",
+                "type": "advisor_reply",
+                "is_read": False
+            }
+        )
+        
+        # Ghi log hệ thống
+        self.m_dbHandler.addDocument(
+            collection="Audit_logs",
+            data={
+                "user_id": "system",
+                "action": "ADVISOR_REPLY_SENT",
+                "target_id": studentId,
+                "metadata": {
+                    "reply_preview": replyContent[:50]
+                }
+            }
+        )
