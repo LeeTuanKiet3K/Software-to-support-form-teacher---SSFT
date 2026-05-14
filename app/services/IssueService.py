@@ -71,6 +71,41 @@ class IssueService:
             print(f"Hỏng tiến trình thiết lập phiếu (Ticket Initialization Failure): {systemErr}")
             return ""
 
+    def createIssueFromForm(self, studentId: str, title: str, category: str, priority: str, content: str) -> str:
+        """
+        Khởi tạo phiếu ghi vấn đề do sinh viên chủ động nộp từ Biểu mẫu.
+        
+        Args:
+            studentId (str): ID sinh viên nộp.
+            title (str): Tiêu đề vấn đề.
+            category (str): Phân loại (Học tập, Tâm lý, ...).
+            priority (str): Mức độ ưu tiên do sinh viên hoặc hệ thống đánh giá.
+            content (str): Nội dung chi tiết.
+            
+        Returns:
+            str: Mã phiếu ghi (Ticket ID).
+        """
+        issueData = {
+            "chat_id": "", # Biểu mẫu không gắn với phiên chat
+            "student_id": studentId,
+            "title": title,
+            "category": category,
+            "intent": category,  # Lưu tạm vào intent để tương thích với hệ thống cũ
+            "sentiment": "chủ động nộp", # Đánh dấu nguồn gốc
+            "content": content,
+            "priority": priority,
+            "status": IssueStatus.OPEN,
+            "is_advisor_viewed": False,
+            "created_at": firestore.SERVER_TIMESTAMP
+        }
+        
+        try:
+            ticketId = self.m_dbHandler.saveDocument("Issues", issueData)
+            return ticketId
+        except Exception as e:
+            print(f"Lỗi khi gửi biểu mẫu (Form Submission Error): {e}")
+            return ""
+
     def getPendingIssues(self) -> List[Dict[str, Any]]:
         """
         Truy xuất danh mục báo động cần xử lý (Fetch Pending Pipelines) để 
