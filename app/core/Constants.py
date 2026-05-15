@@ -20,8 +20,9 @@ class UserRole:
     """
     Vai trò người dùng trong hệ thống (User Roles).
     """
-    STUDENT = "STUDENT"     # Sinh viên
-    ADVISOR = "ADVISOR"     # Cố vấn/Giáo viên chủ nhiệm
+    STUDENT = "student"     # Sinh viên
+    ADVISOR = "advisor"     # Cố vấn/Giáo viên chủ nhiệm
+    ADMIN = "admin"         # Quản trị viên
 
 
 class WarningThresholds:

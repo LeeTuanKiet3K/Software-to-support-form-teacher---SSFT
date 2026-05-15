@@ -12,6 +12,7 @@ import traceback
 
 from app.core.Constants import UserRole, IssueStatus
 from app.services.FirebaseAuthHandler import FirebaseAuthHandler
+from app.features.auth.AuthService import AuthService
 from app.core.Middleware import Middleware
 from app.features.chat.ResponseAggregator import ResponseAggregator
 from app.features.chat.ChatOrchestrator import ChatOrchestrator
@@ -40,6 +41,8 @@ def initializeState():
         st.session_state.m_issueService = IssueService()
     if 'm_chatOrchestrator' not in st.session_state:
         st.session_state.m_chatOrchestrator = ChatOrchestrator()
+    if 'm_authService' not in st.session_state:
+        st.session_state.m_authService = AuthService()
 
 # --- MODULE: XÁC THỰC (AUTHENTICATION UI) ---
 def renderLoginWindow():
@@ -61,32 +64,16 @@ def renderLoginWindow():
                     return
                     
                 with st.spinner("Đang mã hóa & xác thực (Authenticating...)"):
-                    authResult = st.session_state.m_authHandler.signIn(email, password)
+                    authResult = st.session_state.m_authService.loginUser(email, password)
                     if authResult.get("success"):
-                        # Trích xuất payload xác thực (Extract Auth Payload)
-                        tokenData = authResult.get("data")
-                        idToken = tokenData.get("idToken")
+                        userProfile = authResult.get("profile")
                         
-                        # Giải mã JWT để móc nối thông tin (Decode JWT Info)
-                        userObj = st.session_state.m_authHandler.getCurrentUser(idToken)
+                        st.session_state.m_isLoggedIn = True
+                        st.session_state.m_currentUserData = userProfile
                         
-                        if userObj:
-                            st.session_state.m_isLoggedIn = True
-                            st.session_state.m_currentUserData = userObj
-                            
-                            # Cấu hình Role giả lập qua email do Auth Firebase chưa set custom claim
-                            # Tính năng này hoạt động tốt với Workflow (Role mapping step)
-                            emailLower = email.lower()
-                            if "advisor" in emailLower or "gv" in emailLower:
-                                st.session_state.m_currentUserData['role'] = UserRole.ADVISOR
-                            else:
-                                st.session_state.m_currentUserData['role'] = UserRole.STUDENT
-                                
-                            # Thiết lập mã trò chuyện theo UID hoặc email (Session Tracking)
-                            st.session_state.m_chatId = userObj.get('uid', email)
-                            st.rerun()
-                        else:
-                            st.error("Khóa ký bảo mật không chính xác (Token Expired).")
+                        # Thiết lập mã trò chuyện theo UID hoặc email (Session Tracking)
+                        st.session_state.m_chatId = userProfile.get('uid', email)
+                        st.rerun()
                     else:
                         st.error(authResult.get("error"))
 
@@ -196,6 +183,29 @@ def renderAdvisorDashboard():
                     else:
                         st.error("Báo lỗi kết nối CSDL (DB Push Fail).")
 
+# --- MODULE: BẢNG ĐIỀU KHIỂN QUẢN TRỊ (ADMIN DASHBOARD) ---
+def renderAdminDashboard():
+    """Giao diện Quản trị hệ thống (Admin Dashboard)."""
+    st.header("⚙️ Bảng Điều Khiển Quản Trị Hệ Thống")
+    st.info("Khu vực dành riêng cho Quản trị viên. Tại đây bạn có quyền thiết lập cấu hình và quản lý thành viên.")
+    
+    st.subheader("➕ Cấp mới tài khoản Sinh viên")
+    with st.form("createStudentForm"):
+        newEmail = st.text_input("Địa chỉ Email sinh viên")
+        newName = st.text_input("Họ và Tên đầy đủ")
+        submitBtn = st.form_submit_button("Khởi tạo tài khoản (Create)")
+        
+        if submitBtn:
+            if not newEmail or not newName:
+                st.warning("Vui lòng điền đủ thông tin.")
+            else:
+                with st.spinner("Đang khởi tạo hồ sơ (Provisioning)..."):
+                    res = st.session_state.m_authService.adminCreateStudentAccount(newEmail, newName)
+                    if res.get("success"):
+                        st.success(f"Khởi tạo thành công! Mật khẩu tạm thời: `{res.get('temp_password')}`")
+                    else:
+                        st.error(f"Lỗi: {res.get('error')}")
+
 # --- HÀM MAIN: TẬP TRUNG KHUNG LEO (FRONTEND MOUNTS) ---
 def main():
     """Gốc kết xuất màn hình hệ thống (Core Mount Context)."""
@@ -221,7 +231,9 @@ def main():
                 st.rerun()
         
         # Định hình View dựa theo Phân quyền Role (Role Layout Dispatcher)
-        if userRole == UserRole.ADVISOR:
+        if userRole == UserRole.ADMIN:
+            renderAdminDashboard()
+        elif userRole == UserRole.ADVISOR:
             tabStats, tabConvo = st.tabs(["🚦 Dashboard (Trạm QL)", "💬 Trợ lý Bot (Convo)"])
             with tabStats:
                 renderAdvisorDashboard()
