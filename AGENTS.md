@@ -31,7 +31,11 @@
 Để hệ thống khởi chạy an toàn không rò rỉ bảo mật và không gặp lỗi kết nối, phải kiểm soát cấu hình gốc thông qua file `.env`. Cần liệt kê hoặc tạo `.env.example` với các key thiết yếu:
 * `FIREBASE_SERVICE_ACCOUNT_JSON`: Nơi lưu file `serviceAccountKey.json`.
 * `FIREBASE_WEB_API_KEY`: API key cho Firebase Identity Toolkit REST login.
+* `FIREBASE_SERVICE_ACCOUNT_JSON`: Nơi lưu file `serviceAccountKey.json`.
+* `FIREBASE_WEB_API_KEY`: API key cho Firebase Identity Toolkit REST login.
 * `GEMINI_API_KEY`: API Key để kết nối mô hình Google Gemini.
+* `OLLAMA_BASE_URL`: Endpoint của Ollama local server (mặc định: `http://localhost:11434`).
+* `OLLAMA_MODEL_NAME`: Tên model local (mặc định: `llama3`).
 * `OLLAMA_BASE_URL`: Endpoint của Ollama local server (mặc định: `http://localhost:11434`).
 * `OLLAMA_MODEL_NAME`: Tên model local (mặc định: `llama3`).
 * `ENVIRONMENT`: Phân biệt môi trường (Ví dụ: `development` hoặc `production`). 
@@ -72,6 +76,16 @@
 │   │   │   └── AnnouncementUI.py  
 │   │   └── /analytics       (Dashboard GVCN & Đánh giá lớp)  
 │   │       └── AdvisorDashboard.py  
+│   ├── /api                 (FastAPI interface layer)  
+│   │   ├── deps.py  
+│   │   ├── exceptions.py  
+│   │   └── /v1  
+│   │       ├── api.py  
+│   │       └── /endpoints  
+│   │           ├── academic.py  
+│   │           ├── auth.py  
+│   │           ├── notifications.py  
+│   │           └── chat.py  
 │   ├── /api                 (FastAPI interface layer)  
 │   │   ├── deps.py  
 │   │   ├── exceptions.py  
