@@ -1,4 +1,4 @@
-// Types (Kiểu dữ liệu) dùng chung toàn bộ frontend SSFT
+// Types (Kiểu dữ liệu) dùng chung toàn bộ frontend Hệ thống Hỗ trợ GVCN
 
 export type UserRole = 'student' | 'advisor' | 'admin';
 

@@ -48,8 +48,7 @@ export function Sidebar({ userName, userEmail, role = 'advisor', unreadCount = 0
             <GraduationCap className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="text-white font-bold text-sm tracking-wide">SSFT</p>
-            <p className="text-slate-500 text-xs">AI Advisor System</p>
+            <p className="text-white font-bold text-sm tracking-wide">HTHT GVCN</p>
           </div>
         </div>
       </div>

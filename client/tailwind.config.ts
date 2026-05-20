@@ -8,7 +8,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // --- SSFT Design System ---
+        // --- Design System ---
         navy: {
           950: '#020817',
           900: '#0f172a',

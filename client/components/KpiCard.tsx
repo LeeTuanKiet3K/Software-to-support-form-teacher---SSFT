@@ -15,31 +15,35 @@ interface KpiCardProps {
 const colorMap = {
   red: {
     icon: 'text-red-400',
-    bg: 'bg-red-500/10',
+    bg: 'bg-red-500/10 group-hover:bg-red-500/20',
     glow: 'shadow-red-500/10',
-    border: 'border-red-500/20',
+    border: 'border-red-500/20 group-hover:border-red-500/40',
     value: 'text-red-300',
+    gradient: 'from-red-500/5 to-transparent',
   },
   amber: {
     icon: 'text-amber-400',
-    bg: 'bg-amber-500/10',
+    bg: 'bg-amber-500/10 group-hover:bg-amber-500/20',
     glow: 'shadow-amber-500/10',
-    border: 'border-amber-500/20',
+    border: 'border-amber-500/20 group-hover:border-amber-500/40',
     value: 'text-amber-300',
+    gradient: 'from-amber-500/5 to-transparent',
   },
   blue: {
     icon: 'text-blue-400',
-    bg: 'bg-blue-500/10',
+    bg: 'bg-blue-500/10 group-hover:bg-blue-500/20',
     glow: 'shadow-blue-500/10',
-    border: 'border-blue-500/20',
+    border: 'border-blue-500/20 group-hover:border-blue-500/40',
     value: 'text-blue-300',
+    gradient: 'from-blue-500/5 to-transparent',
   },
   emerald: {
     icon: 'text-emerald-400',
-    bg: 'bg-emerald-500/10',
+    bg: 'bg-emerald-500/10 group-hover:bg-emerald-500/20',
     glow: 'shadow-emerald-500/10',
-    border: 'border-emerald-500/20',
+    border: 'border-emerald-500/20 group-hover:border-emerald-500/40',
     value: 'text-emerald-300',
+    gradient: 'from-emerald-500/5 to-transparent',
   },
 };
 
@@ -48,13 +52,15 @@ export function KpiCard({ title, value, icon: Icon, color, delay = 0, trend }: K
 
   return (
     <motion.div
-      className={`glass-card p-5 border ${c.border} hover:border-opacity-40 transition-all duration-300`}
+      className={`relative glass-card p-5 border ${c.border} transition-all duration-300 overflow-hidden group cursor-pointer`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: 'easeOut' }}
-      whileHover={{ y: -2, transition: { duration: 0.2 } }}
+      whileHover={{ y: -4, scale: 1.02, transition: { duration: 0.2 } }}
     >
-      <div className="flex items-start justify-between">
+      <div className={`absolute inset-0 bg-gradient-to-br ${c.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+      
+      <div className="relative z-10 flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <p className="text-slate-400 text-sm font-medium truncate">{title}</p>
           <motion.p
@@ -66,11 +72,11 @@ export function KpiCard({ title, value, icon: Icon, color, delay = 0, trend }: K
             {value}
           </motion.p>
           {trend && (
-            <p className="text-xs text-slate-500 mt-1.5">{trend}</p>
+            <p className="text-xs text-slate-500 mt-1.5 font-medium">{trend}</p>
           )}
         </div>
-        <div className={`p-3 rounded-xl ${c.bg} shrink-0`}>
-          <Icon className={`w-6 h-6 ${c.icon}`} />
+        <div className={`p-3 rounded-2xl ${c.bg} transition-colors duration-300 shrink-0`}>
+          <Icon className={`w-6 h-6 ${c.icon} transform group-hover:scale-110 transition-transform duration-300`} />
         </div>
       </div>
     </motion.div>

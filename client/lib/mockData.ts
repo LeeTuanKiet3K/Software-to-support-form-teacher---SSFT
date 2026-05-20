@@ -107,7 +107,7 @@ export const mockIssues: Issue[] = [
 export const mockChatHistory: ChatMessage[] = [
   {
     role: 'assistant',
-    content: 'Xin chào! Mình là trợ lý AI của hệ thống SSFT. Mình có thể giúp bạn giải đáp thắc mắc, hướng dẫn thủ tục, hoặc kết nối với GVCN khi cần. Bạn đang cần hỗ trợ gì ạ? 😊',
+    content: 'Xin chào! Mình là trợ lý AI của Hệ thống Hỗ trợ GVCN. Mình có thể giúp bạn giải đáp thắc mắc, hướng dẫn thủ tục, hoặc kết nối với GVCN khi cần. Bạn đang cần hỗ trợ gì ạ? 😊',
     timestamp: '2026-05-12T10:00:00Z',
     actions: ['Xem thủ tục', 'Hỏi về điểm', 'Gặp GVCN'],
   },

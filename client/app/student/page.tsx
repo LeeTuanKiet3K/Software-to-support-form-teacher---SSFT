@@ -102,7 +102,7 @@ export default function StudentPage() {
             <GraduationCap className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="text-white font-semibold text-sm">Trợ lý SSFT</p>
+            <p className="text-white font-semibold text-sm">Trợ lý AI</p>
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-xs text-slate-500">AI đang hoạt động</span>
@@ -246,7 +246,7 @@ export default function StudentPage() {
           </button>
         </div>
         <p className="text-xs text-slate-600 text-center mt-2">
-          SSFT AI · Powered by Gemini + Llama 3 · Câu trả lời chỉ mang tính tham khảo
+          Trợ lý AI
         </p>
       </motion.div>
     </div>
