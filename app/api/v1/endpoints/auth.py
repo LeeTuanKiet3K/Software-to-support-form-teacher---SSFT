@@ -3,7 +3,9 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 
+from app.api.deps import get_auth_handler
 from app.features.auth.AuthService import AuthService
+from app.services.FirebaseAuthHandler import FirebaseAuthHandler
 
 router = APIRouter()
 
@@ -11,6 +13,7 @@ router = APIRouter()
 def get_auth_service() -> AuthService:
     """Dependency cung cấp AuthService instance."""
     return AuthService()
+
 
 
 class LoginRequest(BaseModel):
@@ -66,4 +69,44 @@ async def create_student_account(
         success=True,
         uid=result.get("uid"),
         temp_password=result.get("temp_password"),
+    )
+
+
+# ---------------------------------------------------------
+# Logout — Thu hồi refresh token Firebase
+# ---------------------------------------------------------
+
+class LogoutRequest(BaseModel):
+    uid: str = Field(..., min_length=1, description="UID người dùng cần đăng xuất")
+
+
+class LogoutResponse(BaseModel):
+    success: bool
+    message: str
+
+
+@router.post("/logout", response_model=LogoutResponse)
+async def logout(
+    payload: LogoutRequest,
+    auth_handler: FirebaseAuthHandler = Depends(get_auth_handler),
+):
+    """
+    Đăng xuất người dùng — thu hồi toàn bộ refresh token Firebase.
+    Frontend cần xóa token cục bộ (sessionStorage/cookie) sau khi gọi endpoint này.
+
+    Tương đương nút 'Thoát (Sign Out)' trong sidebar của main.py cũ.
+    """
+    print(f"[auth/logout] Đăng xuất UID: {payload.uid}")
+    success = auth_handler.signOutUser(payload.uid)
+
+    if not success:
+        # Không raise 500 — có thể UID không tồn tại, vẫn nên xóa session phía client
+        return LogoutResponse(
+            success=False,
+            message="Không thể thu hồi token trên server. Vui lòng xóa session thủ công."
+        )
+
+    return LogoutResponse(
+        success=True,
+        message="Đăng xuất thành công. Tất cả phiên đăng nhập đã bị thu hồi."
     )
