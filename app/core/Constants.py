@@ -6,7 +6,6 @@ class IssuePriority:
     MEDIUM = "MEDIUM"       # Trung bình
     HIGH = "HIGH"           # Cao
     URGENT = "URGENT"       # Khẩn cấp
-    URGENT = "URGENT"       # Khẩn cấp
 
 class IssueStatus:
     """
