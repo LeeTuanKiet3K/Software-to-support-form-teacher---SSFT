@@ -15,7 +15,6 @@ class IssueStatus:
     IN_PROGRESS = "IN_PROGRESS" # Đang xử lý
     RESOLVED = "RESOLVED"   # Đã giải quyết
     PENDING_ADVISOR = "PENDING_ADVISOR"  # Chờ GVCN xử lý
-    PENDING_ADVISOR = "PENDING_ADVISOR"  # Chờ GVCN xử lý
 
 class UserRole:
     """
