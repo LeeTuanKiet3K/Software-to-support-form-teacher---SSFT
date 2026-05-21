@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GraduationCap, Mail, Lock, ArrowRight, AlertCircle, Eye, EyeOff, User, X, Info, ShieldCheck } from 'lucide-react';
+import { apiClient } from '@/lib/apiClient';
 
 type LoginType = 'advisor' | 'student';
 
@@ -25,19 +26,7 @@ export default function LoginPage() {
       setError('Vui lòng nhập đầy đủ thông tin.');
       return;
     }
-    
-    if (loginType === 'advisor') {
-      if (!identifier.endsWith('@hcmus.edu.vn') && !identifier.endsWith('@fit.hcmus.edu.vn')) {
-        setError('Email giảng viên phải có đuôi @hcmus.edu.vn hoặc @fit.hcmus.edu.vn');
-        return;
-      }
-    } else {
-      if (!/^2\d{7}$/.test(identifier)) {
-        setError('MSSV phải gồm đúng 8 chữ số và bắt đầu bằng số 2.');
-        return;
-      }
-    }
-
+   
     if (password.length < 6) {
       setError('Mật khẩu phải có ít nhất 6 ký tự.');
       return;
@@ -45,19 +34,34 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
-    // Giả lập delay đăng nhập (simulate network)
-    await new Promise((r) => setTimeout(r, 1500));
+    try {
+      const loginEmail = (loginType === 'student' && !identifier.includes('@')) 
+        ? `${identifier}@student.hcmus.edu.vn` 
+        : identifier;
 
-    // Lưu thông tin vào sessionStorage
-    sessionStorage.setItem('ssft_role', loginType);
-    sessionStorage.setItem('ssft_id', identifier);
+      const response = await apiClient('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: loginEmail,
+          password: password
+        })
+      });
 
-    setIsLoading(false);
+      sessionStorage.setItem('ssft_role', loginType);
+      sessionStorage.setItem('ssft_id', identifier);
+      if (response.token) {
+        sessionStorage.setItem('auth_token', response.token);
+      }
 
-    if (loginType === 'advisor') {
-      router.push('/dashboard');
-    } else {
-      router.push('/student');
+      if (loginType === 'advisor') {
+        router.push('/dashboard');
+      } else {
+        router.push('/student');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Tài khoản hoặc mật khẩu không chính xác.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -121,7 +125,7 @@ export default function LoginPage() {
         >
           {/* Tabs */}
           <div className="flex bg-navy-900/50 p-1 rounded-xl mb-6 relative">
-            <div 
+            <div
               className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-purple-600 rounded-lg transition-all duration-300 ease-out shadow-lg
                          ${loginType === 'student' ? 'left-1' : 'left-[calc(50%+2px)]'}`}
             />
@@ -147,8 +151,8 @@ export default function LoginPage() {
             Đăng nhập {loginType === 'advisor' ? 'Hệ thống Quản trị' : 'Cổng Sinh viên'}
           </h2>
           <p className="text-slate-400 text-sm mb-6">
-            {loginType === 'advisor' 
-              ? 'Sử dụng email do trường cấp (@hcmus.edu.vn)' 
+            {loginType === 'advisor'
+              ? 'Sử dụng email do trường cấp (@hcmus.edu.vn)'
               : 'Sử dụng Mã số Sinh viên (MSSV) của bạn'}
           </p>
 
@@ -256,12 +260,12 @@ export default function LoginPage() {
       <AnimatePresence>
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               className="absolute inset-0 bg-navy-950/80 backdrop-blur-sm"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setShowModal(null)}
             />
-            <motion.div 
+            <motion.div
               className="relative w-full max-w-lg bg-navy-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}

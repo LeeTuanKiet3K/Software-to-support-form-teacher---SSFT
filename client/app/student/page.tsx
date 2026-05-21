@@ -2,60 +2,31 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  GraduationCap, Send, Sparkles, Bot, User,
-  BookOpen, FileText, UserCheck, LogOut,
-} from 'lucide-react';
+import { GraduationCap, Send, Sparkles, Bot, User, BookOpen, FileText, UserCheck, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import type { ChatMessage } from '@/types';
-import { mockChatHistory } from '@/lib/mockData';
+import { apiClient } from '@/lib/apiClient';
 
-// --- Mock AI response function ---
+type ChatMessage = {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  actions?: string[];
+};
+
 const QUICK_ACTIONS = [
   { label: 'Xem thủ tục', icon: FileText },
   { label: 'Hỏi về điểm', icon: BookOpen },
   { label: 'Gặp GVCN', icon: UserCheck },
 ];
 
-function generateMockResponse(message: string): ChatMessage {
-  const lower = message.toLowerCase();
-  let content = '';
-  let actions: string[] = [];
-
-  if (lower.includes('bảo lưu') || lower.includes('bao luu')) {
-    content = '📋 **Thủ tục bảo lưu học kỳ:**\n\n1. Điền đơn xin bảo lưu tại phòng Đào tạo (mẫu BL-01)\n2. Có chữ ký xác nhận của GVCN\n3. Nộp kèm minh chứng lý do (bệnh viện, gia đình...)\n4. Thời hạn nộp: **trước tuần 6** của học kỳ\n\nBạn có cần mình hỗ trợ thêm gì không ạ?';
-    actions = ['Tải mẫu đơn BL-01', 'Liên hệ GVCN', 'Xem deadline'];
-  } else if (lower.includes('điểm') || lower.includes('diem') || lower.includes('gpa')) {
-    content = '📊 **Về điểm số và GPA:**\n\nĐiểm GPA được tính theo thang 4.0 dựa trên điểm chữ của từng môn.\n\n- A: 4.0 · B+: 3.5 · B: 3.0 · C+: 2.5 · C: 2.0 · D+: 1.5 · D: 1.0 · F: 0\n\nBạn muốn xem điểm môn nào hoặc cần tính GPA không ạ?';
-    actions = ['Xem bảng điểm', 'Tính GPA', 'Đăng ký học lại'];
-  } else if (lower.includes('học phí') || lower.includes('hoc phi') || lower.includes('tiền')) {
-    content = '💰 **Thông tin học phí:**\n\nHọc phí được thu theo tín chỉ. Bạn có thể xem chi tiết và đóng học phí qua **Cổng thông tin sinh viên**.\n\n⚠️ Nếu bạn gặp khó khăn tài chính, nhà trường có chính sách hỗ trợ và vay vốn sinh viên. GVCN có thể hỗ trợ làm hồ sơ.';
-    actions = ['Xem lịch đóng tiền', 'Hỗ trợ tài chính', 'Vay vốn sinh viên'];
-  } else if (lower.includes('thẻ') || lower.includes('the sinh vien')) {
-    content = '🪪 **Cấp lại thẻ sinh viên:**\n\n1. Nộp đơn tại **Phòng Công tác sinh viên** (Tầng 1, tòa A)\n2. Lệ phí: **50.000đ**\n3. Thời gian xử lý: **7 ngày làm việc**\n4. Mang theo CMND/CCCD khi nhận thẻ';
-    actions = ['Tải mẫu đơn', 'Xem giờ làm việc', 'Bản đồ phòng ban'];
-  } else {
-    const responses = [
-      'Mình đã ghi nhận câu hỏi của bạn. Vấn đề này cần được hỗ trợ kỹ hơn từ GVCN. Mình sẽ gửi thông báo đến thầy/cô ngay nhé!',
-      'Cảm ơn bạn đã chia sẻ! Mình sẽ hỗ trợ bạn tốt nhất có thể. Bạn có thể mô tả chi tiết hơn về vấn đề không ạ?',
-      'Mình hiểu rồi. Dựa trên thông tin bạn cung cấp, mình gợi ý bạn liên hệ trực tiếp phòng liên quan để được hỗ trợ nhanh nhất.',
-    ];
-    content = responses[Math.floor(Math.random() * responses.length)];
-    actions = ['Liên hệ GVCN', 'Xem FAQ', 'Tìm phòng ban'];
-  }
-
-  return { role: 'assistant', content, timestamp: new Date().toISOString(), actions };
-}
-
 export default function StudentPage() {
   const router = useRouter();
-  const [messages, setMessages] = useState<ChatMessage[]>(mockChatHistory);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll xuống tin nhắn mới nhất
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
@@ -64,19 +35,34 @@ export default function StudentPage() {
     const msg = (text ?? input).trim();
     if (!msg || isTyping) return;
 
-    // Thêm tin nhắn của user
-    const userMsg: ChatMessage = { role: 'user', content: msg, timestamp: new Date().toISOString() };
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, { role: 'user', content: msg, timestamp: new Date().toISOString() }]);
     setInput('');
     setIsTyping(true);
 
-    // Giả lập AI đang gõ (1-2 giây)
-    const delay = 1000 + Math.random() * 800;
-    await new Promise((r) => setTimeout(r, delay));
+    try {
+      const response = await apiClient('/chat/student', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          message: msg,
+          student_id: sessionStorage.getItem('ssft_id') || '24120101' 
+        }),
+      });
 
-    const aiMsg = generateMockResponse(msg);
-    setMessages((prev) => [...prev, aiMsg]);
-    setIsTyping(false);
+      setMessages((prev) => [...prev, { 
+        role: 'assistant', 
+        content: response.content || response.answer, 
+        actions: response.quick_actions || response.actions, 
+        timestamp: new Date().toISOString() 
+      }]);
+    } catch (error) {
+      setMessages((prev) => [...prev, { 
+        role: 'assistant', 
+        content: 'Xin lỗi, hệ thống AI đang bảo trì. Vui lòng thử lại sau!', 
+        timestamp: new Date().toISOString() 
+      }]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -102,7 +88,7 @@ export default function StudentPage() {
             <GraduationCap className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="text-white font-semibold text-sm">Trợ lý AI</p>
+            <p className="text-white font-semibold text-sm">Trợ lý AI Sinh viên</p>
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-xs text-slate-500">AI đang hoạt động</span>
@@ -163,7 +149,7 @@ export default function StudentPage() {
               </div>
 
               {/* Bubble */}
-              <div className={`max-w-[75%] space-y-2 ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
+              <div className={`max-w-[75%] space-y-2 flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                 <div className={`px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap
                   ${msg.role === 'user' ? 'bubble-user' : 'bubble-ai'}`}>
                   {msg.content}

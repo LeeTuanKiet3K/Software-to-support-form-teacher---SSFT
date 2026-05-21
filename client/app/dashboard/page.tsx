@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle, Clock, CheckCircle2, Users,
@@ -9,25 +9,43 @@ import {
 import { KpiCard } from '@/components/KpiCard';
 import { IssueTable } from '@/components/IssueTable';
 import { IntentPieChart, WeeklyBarChart } from '@/components/StatsChart';
-import {
-  mockKpiStats, mockIssues, mockPieData, mockBarData,
-} from '@/lib/mockData';
+import { mockPieData, mockBarData } from '@/lib/mockData';
+import { apiClient } from '@/lib/apiClient';
 import type { Issue } from '@/types';
 
 export default function DashboardPage() {
-  const [issues, setIssues] = useState<Issue[]>(mockIssues);
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [stats, setStats] = useState({ urgent: 0, pending: 0, resolved: 0, totalStudents: 0 });
   const [resolvingId, setResolvingId] = useState<string | undefined>();
-  const [stats, setStats] = useState(mockKpiStats);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Xử lý resolve issue (cập nhật state local - Phase 2 sẽ gọi API thật)
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      const data = await apiClient('/dashboard/summary');
+      setStats(data.stats || { urgent: 0, pending: 0, resolved: 0, totalStudents: 0 });
+      setIssues(data.issues || []);
+    } catch (error) {
+      console.error("Lỗi lấy dữ liệu Dashboard:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
   const handleResolve = async (issueId: string) => {
-    setResolvingId(issueId);
-    await new Promise((r) => setTimeout(r, 800)); // Giả lập API call
-    setIssues((prev) =>
-      prev.map((i) => i.id === issueId ? { ...i, status: 'RESOLVED', is_advisor_viewed: true } : i)
-    );
-    setStats((prev) => ({ ...prev, pending: Math.max(0, prev.pending - 1), resolved: prev.resolved + 1 }));
-    setResolvingId(undefined);
+    try {
+      setResolvingId(issueId);
+      await apiClient(`/issues/${issueId}/resolve`, { method: 'POST' });
+      await fetchDashboardData(); 
+    } catch (error) {
+      console.error("Lỗi giải quyết vấn đề:", error);
+    } finally {
+      setResolvingId(undefined);
+    }
   };
 
   const activeIssues = issues.filter((i) => i.status !== 'RESOLVED');
@@ -53,10 +71,10 @@ export default function DashboardPage() {
           </p>
         </div>
         <button
-          onClick={() => setIssues(mockIssues)}
+          onClick={fetchDashboardData}
           className="btn-ghost flex items-center gap-2 text-sm"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           Làm mới
         </button>
       </motion.div>
