@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GraduationCap, Mail, Lock, ArrowRight, AlertCircle, Eye, EyeOff, User, X, Info, ShieldCheck } from 'lucide-react';
+import { api } from '@/lib/api';
 
 type LoginType = 'advisor' | 'student';
 
@@ -45,19 +46,28 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
-    // Giả lập delay đăng nhập (simulate network)
-    await new Promise((r) => setTimeout(r, 1500));
+    setIsLoading(true);
 
-    // Lưu thông tin vào sessionStorage
-    sessionStorage.setItem('ssft_role', loginType);
-    sessionStorage.setItem('ssft_id', identifier);
+    try {
+      const res = await api.login(identifier, password);
+      if (res.success) {
+        sessionStorage.setItem('ssft_role', res.profile?.role || loginType);
+        sessionStorage.setItem('ssft_id', res.profile?.uid || identifier);
+        
+        setIsLoading(false);
 
-    setIsLoading(false);
-
-    if (loginType === 'advisor') {
-      router.push('/dashboard');
-    } else {
-      router.push('/student');
+        if (loginType === 'advisor') {
+          router.push('/dashboard');
+        } else {
+          router.push('/student');
+        }
+      } else {
+        setError(res.error || 'Đăng nhập thất bại');
+        setIsLoading(false);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Lỗi kết nối máy chủ');
+      setIsLoading(false);
     }
   };
 

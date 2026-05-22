@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { api } from '@/lib/api';
 import {
   AlertTriangle, Clock, CheckCircle2, Users,
   Sparkles, RefreshCw,
@@ -15,19 +16,40 @@ import {
 import type { Issue } from '@/types';
 
 export default function DashboardPage() {
-  const [issues, setIssues] = useState<Issue[]>(mockIssues);
+  const [issues, setIssues] = useState<Issue[]>([]);
   const [resolvingId, setResolvingId] = useState<string | undefined>();
   const [stats, setStats] = useState(mockKpiStats);
 
-  // Xử lý resolve issue (cập nhật state local - Phase 2 sẽ gọi API thật)
+  const fetchIssues = async () => {
+    try {
+      const data = await api.getPendingIssues();
+      if (data && data.issues) {
+        setIssues(data.issues);
+        setStats(prev => ({ ...prev, pending: data.issues.length }));
+      }
+    } catch (err) {
+      console.error("Lỗi lấy danh sách vấn đề:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchIssues();
+  }, []);
+
+  // Xử lý resolve issue (gọi API thật)
   const handleResolve = async (issueId: string) => {
     setResolvingId(issueId);
-    await new Promise((r) => setTimeout(r, 800)); // Giả lập API call
-    setIssues((prev) =>
-      prev.map((i) => i.id === issueId ? { ...i, status: 'RESOLVED', is_advisor_viewed: true } : i)
-    );
-    setStats((prev) => ({ ...prev, pending: Math.max(0, prev.pending - 1), resolved: prev.resolved + 1 }));
-    setResolvingId(undefined);
+    try {
+      await api.updateIssueStatus(issueId, 'RESOLVED');
+      setIssues((prev) =>
+        prev.map((i) => i.id === issueId ? { ...i, status: 'RESOLVED', is_advisor_viewed: true } : i)
+      );
+      setStats((prev) => ({ ...prev, pending: Math.max(0, prev.pending - 1), resolved: prev.resolved + 1 }));
+    } catch (err) {
+      console.error("Lỗi cập nhật trạng thái:", err);
+    } finally {
+      setResolvingId(undefined);
+    }
   };
 
   const activeIssues = issues.filter((i) => i.status !== 'RESOLVED');
@@ -53,7 +75,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <button
-          onClick={() => setIssues(mockIssues)}
+          onClick={() => fetchIssues()}
           className="btn-ghost flex items-center gap-2 text-sm"
         >
           <RefreshCw className="w-4 h-4" />
