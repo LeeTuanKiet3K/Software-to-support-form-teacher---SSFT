@@ -1,64 +1,89 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+// client/lib/api.ts
+// Utility wrapper cho fetch API để kết nối với FastAPI backend
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+
+interface FetchOptions extends RequestInit {
+  headers?: Record<string, string>;
+}
 
 export const api = {
-  // --- Auth ---
-  async login(email: string, password: string) {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+  get: async (endpoint: string, options: FetchOptions = {}) => {
+    return request(endpoint, { ...options, method: 'GET' });
+  },
+
+  post: async (endpoint: string, data: any, options: FetchOptions = {}) => {
+    return request(endpoint, {
+      ...options,
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: 'Đăng nhập thất bại' }));
-      throw new Error(err.detail || 'Lỗi kết nối máy chủ');
-    }
-    return res.json();
   },
 
-  async logout(uid: string) {
-    const res = await fetch(`${API_BASE_URL}/auth/logout`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid }),
+  put: async (endpoint: string, data: any, options: FetchOptions = {}) => {
+    return request(endpoint, {
+      ...options,
+      method: 'PUT',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
     });
-    return res.json();
   },
 
-  // --- Issues ---
-  async getPendingIssues() {
-    const res = await fetch(`${API_BASE_URL}/issues/pending`, {
-      method: 'GET',
-    });
-    if (!res.ok) throw new Error('Không thể lấy danh sách vấn đề');
-    return res.json();
-  },
-
-  async updateIssueStatus(issueId: string, newStatus: string) {
-    const res = await fetch(`${API_BASE_URL}/issues/${issueId}/status`, {
+  patch: async (endpoint: string, data: any, options: FetchOptions = {}) => {
+    return request(endpoint, {
+      ...options,
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ new_status: newStatus }),
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
     });
-    if (!res.ok) throw new Error('Không thể cập nhật trạng thái vấn đề');
-    return res.json();
   },
 
-  // --- Chat ---
-  async sendChatMessage(chatId: string, studentId: string, studentMessage: string) {
-    const res = await fetch(`${API_BASE_URL}/chat/message`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, student_id: studentId, student_message: studentMessage }),
-    });
-    if (!res.ok) throw new Error('Lỗi gửi tin nhắn');
-    return res.json();
-  },
-
-  async getChatHistory(chatId: string) {
-    const res = await fetch(`${API_BASE_URL}/chat/history/${chatId}`, {
-      method: 'GET',
-    });
-    if (!res.ok) throw new Error('Không thể lấy lịch sử chat');
-    return res.json();
+  delete: async (endpoint: string, options: FetchOptions = {}) => {
+    return request(endpoint, { ...options, method: 'DELETE' });
   },
 };
+
+async function request(endpoint: string, options: FetchOptions) {
+  const url = `${BASE_URL}${endpoint}`;
+  
+  // Có thể chèn Authorization Header ở đây nếu đã đăng nhập
+  // const token = localStorage.getItem('token');
+  // if (token) {
+  //   options.headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
+  // }
+
+  try {
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+      let errorMessage = 'Lỗi kết nối đến server';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorMessage;
+      } catch (e) {
+        errorMessage = response.statusText;
+      }
+      throw new Error(errorMessage);
+    }
+
+    // Xử lý response NoContent (204)
+    if (response.status === 204) {
+      return null;
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error(`[API Error] ${options.method} ${endpoint}:`, error);
+    throw error;
+  }
+}
