@@ -5,7 +5,9 @@ from pydantic import BaseModel, EmailStr, Field
 
 from app.api.deps import get_auth_handler
 from app.features.auth.AuthService import AuthService
+from app.features.auth.PasswordService import PasswordService
 from app.services.FirebaseAuthHandler import FirebaseAuthHandler
+import re
 
 router = APIRouter()
 
@@ -13,6 +15,9 @@ router = APIRouter()
 def get_auth_service() -> AuthService:
     """Dependency cung cấp AuthService instance."""
     return AuthService()
+
+def get_password_service() -> PasswordService:
+    return PasswordService()
 
 
 
@@ -38,6 +43,15 @@ class CreateStudentResponse(BaseModel):
     temp_password: Optional[str] = None
     error: Optional[str] = None
 
+class CreateAdvisorRequest(BaseModel):
+    advisor_email: EmailStr = Field(..., description="Email giáo viên")
+    advisor_name: str = Field(..., min_length=2, max_length=100, description="Họ tên giáo viên")
+
+class CreateAdvisorResponse(BaseModel):
+    success: bool
+    uid: Optional[str] = None
+    temp_password: Optional[str] = None
+    error: Optional[str] = None
 
 @router.post("/login", response_model=LoginResponse)
 async def login(
@@ -71,6 +85,24 @@ async def create_student_account(
         temp_password=result.get("temp_password"),
     )
 
+@router.post("/advisors", response_model=CreateAdvisorResponse, status_code=201)
+async def create_advisor_account(
+    payload: CreateAdvisorRequest,
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """Admin tạo tài khoản giáo viên qua AuthService."""
+    result = auth_service.adminCreateAdvisorAccount(
+        advisorEmail=payload.advisor_email,
+        advisorName=payload.advisor_name,
+    )
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Không thể tạo tài khoản"))
+
+    return CreateAdvisorResponse(
+        success=True,
+        uid=result.get("uid"),
+        temp_password=result.get("temp_password"),
+    )
 
 # ---------------------------------------------------------
 # Logout — Thu hồi refresh token Firebase
@@ -107,6 +139,39 @@ async def logout(
         )
 
     return LogoutResponse(
-        success=True,
         message="Đăng xuất thành công. Tất cả phiên đăng nhập đã bị thu hồi."
     )
+
+# ---------------------------------------------------------
+# Change Password
+# ---------------------------------------------------------
+
+class ChangePasswordRequest(BaseModel):
+    uid: str = Field(..., min_length=1, description="UID người dùng cần đổi mật khẩu")
+    new_password: str = Field(..., min_length=8, description="Mật khẩu mới")
+
+class ChangePasswordResponse(BaseModel):
+    success: bool
+    message: str
+
+@router.post("/change-password", response_model=ChangePasswordResponse)
+async def change_password(
+    payload: ChangePasswordRequest,
+    password_service: PasswordService = Depends(get_password_service)
+):
+    """
+    Đổi mật khẩu người dùng (Bắt buộc thỏa mãn quy tắc mạnh).
+    """
+    pwd = payload.new_password
+    # Quy tắc: Tối thiểu 8 ký tự, 1 hoa, 1 thường, 1 số
+    if len(pwd) < 8 or not re.search(r"[a-z]", pwd) or not re.search(r"[A-Z]", pwd) or not re.search(r"[0-9]", pwd):
+        raise HTTPException(
+            status_code=400, 
+            detail="Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số."
+        )
+        
+    success = password_service.changePassword(payload.uid, payload.new_password)
+    if not success:
+        raise HTTPException(status_code=500, detail="Đổi mật khẩu thất bại. Vui lòng thử lại.")
+        
+    return ChangePasswordResponse(success=True, message="Đổi mật khẩu thành công.")

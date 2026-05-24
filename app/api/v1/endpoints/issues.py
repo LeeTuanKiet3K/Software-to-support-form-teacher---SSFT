@@ -242,8 +242,6 @@ class UpdateIssueStatusResponse(BaseModel):
 class CreateIssueFromFormRequest(BaseModel):
     student_id: str = Field(..., min_length=1, description="UID sinh viên nộp")
     title: str = Field(..., min_length=3, max_length=200, description="Tiêu đề vấn đề")
-    category: str = Field(..., description="Phân loại: tam_ly | khieu_nai | hoc_vu | khac")
-    priority: str = Field(..., description="Mức ưu tiên: URGENT | HIGH | MEDIUM | LOW")
     content: str = Field(..., min_length=10, description="Nội dung chi tiết vấn đề")
 
 
@@ -354,22 +352,31 @@ async def create_issue_from_form(
 ):
     """
     Sinh viên chủ động nộp phiếu phản ánh vấn đề qua biểu mẫu (không qua chat AI).
-    Phiếu sẽ được tạo trực tiếp trên Firestore với status OPEN.
+    Hệ thống sẽ dùng thuật toán PriorityLogic để tự động phân loại và đánh giá mức độ khẩn cấp.
     """
-    # Kiểm tra giá trị hợp lệ
-    if payload.priority not in VALID_PRIORITIES:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Mức ưu tiên không hợp lệ. Giá trị cho phép: {VALID_PRIORITIES}"
-        )
-
+    from app.features.issue_manager.PriorityLogic import PriorityLogic
+    
     print(f"[issues/form] SV {payload.student_id} nộp phiếu: {payload.title}")
+    
     try:
+        # Tự động phân loại vấn đề
+        logic = PriorityLogic()
+        rawPriority, category, _ = logic.determinePriority(payload.content)
+        
+        # Ánh xạ từ P0/P1/P2 sang URGENT/HIGH/MEDIUM/LOW
+        priority_map = {
+            "P0": "URGENT",
+            "P1": "HIGH",
+            "P2": "MEDIUM",
+            "INVALID": "LOW"
+        }
+        final_priority = priority_map.get(rawPriority, "LOW")
+        
         ticket_id = issue_service.createIssueFromForm(
             studentId=payload.student_id,
             title=payload.title,
-            category=payload.category,
-            priority=payload.priority,
+            category=category,
+            priority=final_priority,
             content=payload.content,
         )
     except Exception as e:

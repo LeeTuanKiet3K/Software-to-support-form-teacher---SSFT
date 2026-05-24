@@ -109,6 +109,49 @@ class AuthService:
             print(f"Lỗi khởi tạo sinh viên (Error creating student): {e}")
             return {"success": False, "error": getErrorMessage("unavailable")}
 
+    def adminCreateAdvisorAccount(self, advisorEmail: str, advisorName: str) -> Dict[str, Any]:
+        """
+        Admin tạo tài khoản giáo viên (Admin-initiated advisor account creation).
+        
+        Args:
+            advisorEmail (str): Email giáo viên.
+            advisorName (str): Tên hiển thị giáo viên.
+            
+        Returns:
+            Dict[str, Any]: Kết quả khởi tạo bao gồm UID và mật khẩu tạm.
+        """
+        try:
+            tempPassword = generateTempPassword()
+            uid = self.m_authHandler.createAuthUser(advisorEmail, tempPassword)
+            
+            if not uid:
+                return {"success": False, "error": "Không thể tạo tài khoản trên Auth."}
+            
+            profileData = {
+                "email": advisorEmail,
+                "full_name": advisorName,
+                "role": UserRole.ADVISOR,
+                "requires_password_change": True,
+                "is_active": True,
+                "avatar_url": "",
+            }
+            
+            profileCreated = self.m_dbHandler.createUserProfile(uid, profileData)
+            
+            if profileCreated:
+                 return {
+                     "success": True, 
+                     "uid": uid,
+                     "temp_password": tempPassword
+                 }
+            else:
+                 self.m_authHandler.deleteAuthUser(uid)
+                 return {"success": False, "error": "Không thể tạo hồ sơ trên CSDL."}
+                 
+        except Exception as e:
+            print(f"Lỗi khởi tạo giáo viên (Error creating advisor): {e}")
+            return {"success": False, "error": getErrorMessage("unavailable")}
+
     def logout(self, uid: Optional[str] = None) -> bool:
         """
         Điều phối đăng xuất người dùng (User logout flow).

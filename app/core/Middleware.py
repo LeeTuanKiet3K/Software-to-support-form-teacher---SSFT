@@ -32,7 +32,7 @@ class Middleware:
         if self.m_geminiKey:
             genai.configure(api_key=self.m_geminiKey)
             # Khởi tạo instance kết nối (Service Binding)
-            self.m_geminiModel = genai.GenerativeModel('gemini-1.5-flash')
+            self.m_geminiModel = genai.GenerativeModel('gemini-2.5-flash')
             
         # Khởi chạy Dependency Injection với các Module đã lập trình trước (Data Linking)
         self.m_dbHandler = FirestoreHandler()

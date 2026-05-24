@@ -36,9 +36,11 @@ def processStudentMessage(studentIdOrName: str, issueText: str, firestoreHandler
         # Trả về câu thông báo mặc định (Return fallback message)
         return "Vấn đề của bạn đã được ghi nhận ở mức ưu tiên cao và chuyển đến trực tiếp GVCN. Thầy/cô sẽ liên hệ với bạn trong thời gian sớm nhất."
         
+    from app.core.Config import AppConfig
+    
     # 3. Sử dụng AI để trả lời (Normal P2 issues)
-    # Lấy API Key từ môi trường (Fetch API Key)
-    apiKey = os.getenv("GEMINI_API_KEY")
+    # Lấy API Key từ cấu hình hệ thống
+    apiKey = AppConfig.GEMINI_API_KEY
     if not apiKey:
         return "Hệ thống AI hiện đang bảo trì (Thiếu API Key). Vui lòng liên hệ trực tiếp GVCN."
         
@@ -76,9 +78,9 @@ def processStudentMessage(studentIdOrName: str, issueText: str, firestoreHandler
     # Cấu hình AI Model (Setup AI Model)
     genai.configure(api_key=apiKey)
     
-    # Sử dụng model gemini-1.5-flash cho tác vụ xử lý văn bản
+    # Sử dụng model gemini-2.5-flash cho tác vụ xử lý văn bản
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=systemPrompt)
+        model = genai.GenerativeModel('gemini-2.5-flash', system_instruction=systemPrompt)
         response = model.generate_content(issueText)
         return response.text
     except Exception as e:

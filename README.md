@@ -8,7 +8,7 @@
 
 ## 2. Technical Stack (Công nghệ sử dụng)
 * **Backend Language**: Python 3.10+.
-* **UI Runtime**: Streamlit (`app/main.py`) là entrypoint đang chạy chính.
+* **UI Runtime**: Streamlit (`app/main.py`) là entrypoint đang chạy chính. (Lưu ý: Hiện tại đã nâng cấp lên Next.js ở thư mục `client`)
 * **API Runtime**: FastAPI router theo phiên bản `app/api/v1/`.
 * **Database**: Firebase (Firestore) dùng làm Knowledge Base (Cơ sở tri thức) để đảm bảo tính chính xác và tránh Hallucination (AI bịa đặt). Sử dụng Firestore Realtime Listeners để cập nhật danh sách vấn đề của sinh viên ngay khi có dữ liệu mới. Ưu tiên tối ưu hóa số lượng truy vấn (Read operations) để tránh vượt quá định mức của Firebase Free Tier.
 * **Framework**: Ưu tiên các thư viện Python hiện đại để xử lý logic và kết nối Firebase (firebase-admin).
@@ -92,3 +92,66 @@
    - Hạn chế tự quản lý mã OTP thủ công để giảm thiểu rủi ro bảo mật và lưu trữ dư thừa.
 5. **Audit Logging (Nhật ký bảo mật):**
    - Mọi hành động đổi mật khẩu hoặc yêu cầu reset phải được ghi nhận vào collection `AI_logs` hoặc một collection `Audit_logs` riêng biệt để truy vết.
+
+
+## 6. Hướng dẫn khởi chạy dự án
+
+Dự án được chia làm 2 phần hoạt động độc lập (Backend và Frontend). Bạn cần phải mở 2 cửa sổ Terminal (hoặc Command Prompt) để chạy song song cả hai.
+
+### Khởi chạy Backend (FastAPI / Python)
+1. Mở Terminal mới và đảm bảo bạn đang ở thư mục gốc của dự án (`Software-to-support-form-teacher---SSFT`).
+2. (Tùy chọn) Cài đặt các thư viện cần thiết nếu đây là lần đầu chạy:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Chạy máy chủ Backend:
+   ```bash
+   python -m app.main
+   ```
+   *Máy chủ sẽ chạy tại địa chỉ: `http://localhost:8000`*
+
+### Khởi chạy Frontend (Next.js / React)
+1. Mở một Terminal thứ 2.
+2. Di chuyển vào thư mục `client`:
+   ```bash
+   cd client
+   ```
+3. (Tùy chọn) Cài đặt các gói thư viện nếu đây là lần đầu chạy:
+   ```bash
+   npm install
+   ```
+4. Chạy giao diện Web:
+   ```bash
+   npm run dev
+   ```
+   *Giao diện web sẽ sẵn sàng tại địa chỉ: `http://localhost:3000`*
+
+---
+
+## 7. Hướng dẫn Đăng nhập theo Vai trò
+
+Hệ thống có 3 cấp độ người dùng: **Quản trị viên (Admin)**, **Giáo viên chủ nhiệm (Advisor)**, và **Sinh viên (Student)**.
+
+### A. Dành cho Quản trị viên (Admin)
+Admin là người có quyền tạo ra các tài khoản cho GVCN và Sinh viên.
+- **Bước 1:** Truy cập vào giao diện tạo tài khoản: [http://localhost:3000/admin](http://localhost:3000/admin)
+- **Bước 2:** Nhập mã bảo mật Master Passcode: `SSFT_Admin2026`
+- **Bước 3:** Sau khi vào được Dashboard Admin, chọn loại tài khoản (Giáo viên / Sinh viên), điền Tên và Email để khởi tạo. Hệ thống sẽ cấp một **Mật khẩu tạm thời** trên màn hình. Hãy gửi Email và Mật khẩu tạm này cho người dùng.
+
+### B. Dành cho Giáo viên Chủ nhiệm (GVCN)
+- **Bước 1:** GVCN truy cập vào trang đăng nhập: [http://localhost:3000/login](http://localhost:3000/login)
+- **Bước 2:** Sử dụng **Email** và **Mật khẩu tạm** do Admin cấp để đăng nhập.
+- **Bước 3:** (Sắp tới) Hệ thống sẽ yêu cầu GVCN đổi mật khẩu mới trong lần đăng nhập đầu tiên.
+- **Bước 4:** Sau khi đăng nhập thành công, GVCN sẽ được chuyển hướng thẳng vào **Dashboard** để xem các vấn đề khẩn cấp do sinh viên gửi lên và xem tổng quan điểm số lớp.
+
+### C. Dành cho Sinh viên (Student)
+- **Bước 1:** Tương tự GVCN, Sinh viên truy cập vào [http://localhost:3000/login](http://localhost:3000/login).
+- **Bước 2:** Sử dụng tài khoản do Admin cấp để đăng nhập.
+- **Bước 3:** Sinh viên sẽ được chuyển đến trang đa năng. Tại đây sinh viên có thể:
+  - Chat với AI để hỏi đáp nội quy, quy chế.
+  - Chuyển sang Tab "Gửi GVCN" để gửi báo cáo vấn đề khẩn cấp. AI (PriorityLogic) sẽ tự động quét và phân loại mức độ khẩn cấp (URGENT, HIGH...) và chuyển về Dashboard của GVCN.
+  - Chuyển sang Tab "Bảng điểm" để theo dõi điểm số môn học.
+
+*Lưu ý: Để phục vụ mục đích kiểm thử (Testing), bạn có thể dùng 2 tài khoản sinh viên đã được tạo sẵn (Mock Data) như sau:*
+- Sinh viên 1: `sv_tuan@student.hcmus.edu.vn` | Mật khẩu: `Password123`
+- Sinh viên 2: `sv_be@student.hcmus.edu.vn` | Mật khẩu: `Password123`
