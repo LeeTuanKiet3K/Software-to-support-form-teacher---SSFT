@@ -48,7 +48,13 @@ export default function LoginPage() {
       });
 
       sessionStorage.setItem('ssft_role', loginType);
-      sessionStorage.setItem('ssft_id', identifier);
+      
+      if (response.profile) {
+        sessionStorage.setItem('ssft_id', response.profile.id);
+        sessionStorage.setItem('ssft_name', response.profile.full_name);
+      } else {
+        sessionStorage.setItem('ssft_id', identifier);
+      }
       if (response.token) {
         sessionStorage.setItem('auth_token', response.token);
       }

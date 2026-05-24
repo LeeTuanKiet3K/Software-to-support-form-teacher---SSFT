@@ -15,7 +15,17 @@ export const apiClient = async (endpoint: string, options: RequestInit = {}) => 
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.detail || 'Lỗi kết nối đến máy chủ Backend');
+    let errorMessage = 'Lỗi kết nối đến máy chủ Backend';
+    if (errorData.detail) {
+      if (typeof errorData.detail === 'string') {
+        errorMessage = errorData.detail;
+      } else if (Array.isArray(errorData.detail)) {
+        errorMessage = errorData.detail.map((err: any) => err.msg).join(', ');
+      } else {
+        errorMessage = JSON.stringify(errorData.detail);
+      }
+    }
+    throw new Error(errorMessage);
   }
 
   return response.json();

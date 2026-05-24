@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertTriangle, Clock, CheckCircle2, Users,
-  Sparkles, RefreshCw,
+  Sparkles, RefreshCw, Key, LogOut, Bell, AlertCircle, X, Eye, EyeOff
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { KpiCard } from '@/components/KpiCard';
 import { IssueTable } from '@/components/IssueTable';
 import { IntentPieChart, WeeklyBarChart } from '@/components/StatsChart';
@@ -14,10 +15,23 @@ import { apiClient } from '@/lib/apiClient';
 import type { Issue } from '@/types';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [stats, setStats] = useState({ urgent: 0, pending: 0, resolved: 0, totalStudents: 0 });
   const [resolvingId, setResolvingId] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(true);
+  const [advisorName, setAdvisorName] = useState('Giáo viên');
+  const [advisorId, setAdvisorId] = useState('');
+
+  // Password Modal State
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
@@ -32,8 +46,46 @@ export default function DashboardPage() {
     }
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Mật khẩu nhập lại không khớp');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const res = await apiClient('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({
+          uid: advisorId,
+          new_password: newPassword
+        })
+      });
+      if (res.success) {
+        setPasswordSuccess('Đổi mật khẩu thành công!');
+        setNewPassword('');
+        setConfirmPassword('');
+        setTimeout(() => setShowPasswordModal(false), 2000);
+      }
+    } catch (err: any) {
+      setPasswordError(err.message || 'Có lỗi xảy ra khi đổi mật khẩu');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchDashboardData();
+    if (typeof window !== 'undefined') {
+      const name = sessionStorage.getItem('ssft_name');
+      const uid = sessionStorage.getItem('ssft_id');
+      if (name) setAdvisorName(name);
+      if (uid) setAdvisorId(uid);
+    }
   }, []);
 
   const handleResolve = async (issueId: string) => {
@@ -64,19 +116,33 @@ export default function DashboardPage() {
             <Sparkles className="w-5 h-5 text-purple-400" />
             <h1 className="text-2xl font-bold text-white">Dashboard GVCN</h1>
           </div>
-          <p className="text-slate-400 text-sm">
-            Xin chào, <span className="text-slate-200 font-medium">ThS. Nguyễn Thị Lan</span> ·
+          <p className="text-slate-400 text-sm mt-1">
+            Xin chào, <span className="text-slate-200 font-medium">{advisorName}</span> ·
             Lớp <span className="text-purple-300 font-medium">24CTT4</span> ·{' '}
             <span className="text-slate-500">{stats.totalStudents} sinh viên</span>
           </p>
         </div>
-        <button
-          onClick={fetchDashboardData}
-          className="btn-ghost flex items-center gap-2 text-sm"
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Làm mới
-        </button>
+        
+        <div className="flex gap-4">
+          <button className="relative p-2 text-slate-400 hover:text-white transition-colors">
+            <Bell className="w-5 h-5" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+          </button>
+          
+          <button
+            onClick={() => setShowPasswordModal(true)}
+            className="btn-ghost flex items-center gap-2 text-sm py-2 px-3 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10"
+          >
+            <Key className="w-4 h-4" /> Đổi MK
+          </button>
+          
+          <button 
+            onClick={() => { sessionStorage.clear(); router.push('/login'); }}
+            className="btn-ghost flex items-center gap-2 text-sm py-2 px-4 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"
+          >
+            <LogOut className="w-4 h-4" /> Thoát
+          </button>
+        </div>
       </motion.div>
 
       {/* --- KPI Cards --- */}
@@ -117,7 +183,6 @@ export default function DashboardPage() {
 
       {/* --- Main content: Issues + Charts --- */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Issue Table - chiếm 2/3 */}
         <motion.div
           className="xl:col-span-2 space-y-4"
           initial={{ opacity: 0, y: 20 }}
@@ -140,7 +205,6 @@ export default function DashboardPage() {
           />
         </motion.div>
 
-        {/* Charts - chiếm 1/3 */}
         <motion.div
           className="space-y-4"
           initial={{ opacity: 0, x: 20 }}
@@ -152,6 +216,90 @@ export default function DashboardPage() {
           <WeeklyBarChart data={mockBarData} />
         </motion.div>
       </div>
+      
+      {/* Password Modal */}
+      <AnimatePresence>
+        {showPasswordModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-card w-full max-w-md p-6 relative"
+            >
+              <button 
+                onClick={() => setShowPasswordModal(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                <Key className="w-5 h-5 text-purple-400" /> Đổi mật khẩu
+              </h2>
+              
+              {passwordSuccess ? (
+                <div className="text-center py-6">
+                  <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+                  <p className="text-emerald-400 font-medium">{passwordSuccess}</p>
+                </div>
+              ) : (
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Mật khẩu mới</label>
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="input-dark w-full pr-11"
+                        placeholder="Tối thiểu 8 ký tự, 1 chữ hoa, 1 số..."
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                      >
+                        {showNewPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Nhập lại mật khẩu</label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="input-dark w-full pr-11"
+                        placeholder="Xác nhận mật khẩu mới"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
+                      </button>
+                    </div>
+                  </div>
+                  {passwordError && (
+                    <p className="text-red-400 text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4"/> {passwordError}</p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={passwordLoading}
+                    className="w-full btn-primary bg-purple-600 hover:bg-purple-500 py-2.5 mt-2 disabled:opacity-50"
+                  >
+                    {passwordLoading ? 'Đang cập nhật...' : 'Cập nhật mật khẩu'}
+                  </button>
+                </form>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
