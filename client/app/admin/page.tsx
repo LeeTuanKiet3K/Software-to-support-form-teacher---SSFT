@@ -13,11 +13,12 @@ export default function AdminPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passcode, setPasscode] = useState('');
-  
+
   const [accountType, setAccountType] = useState<'advisor' | 'student'>('advisor');
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
-  
+  const [studentId, setStudentId] = useState('');
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successData, setSuccessData] = useState<{ email: string; temp_password: string } | null>(null);
@@ -46,17 +47,17 @@ export default function AdminPage() {
     setError('');
     setSuccessData(null);
 
-    if (!email || !fullName) {
-      setError('Vui lòng nhập đầy đủ email và họ tên.');
+    if (!email || !fullName || (accountType === 'student' && !studentId)) {
+      setError('Vui lòng nhập đầy đủ thông tin.');
       return;
     }
 
     setIsLoading(true);
     try {
       const endpoint = accountType === 'advisor' ? '/auth/advisors' : '/auth/students';
-      const body = accountType === 'advisor' 
+      const body = accountType === 'advisor'
         ? { advisor_email: email, advisor_name: fullName }
-        : { student_email: email, student_name: fullName };
+        : { student_email: email, student_name: fullName, student_id: studentId };
 
       const response = await apiClient(endpoint, {
         method: 'POST',
@@ -70,6 +71,7 @@ export default function AdminPage() {
         });
         setEmail('');
         setFullName('');
+        setStudentId('');
       }
     } catch (err: any) {
       setError(err.message || 'Có lỗi xảy ra khi tạo tài khoản.');
@@ -92,7 +94,7 @@ export default function AdminPage() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-navy-950">
-        <motion.div 
+        <motion.div
           className="w-full max-w-sm glass-card p-8"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -106,7 +108,7 @@ export default function AdminPage() {
           <p className="text-slate-400 text-sm text-center mb-6">
             Vui lòng nhập mã xác thực quản trị viên để tiếp tục.
           </p>
-          
+
           <form onSubmit={handleAuthenticate} className="space-y-4">
             <input
               type="password"
@@ -120,8 +122,8 @@ export default function AdminPage() {
             <button type="submit" className="btn-primary w-full bg-red-600 hover:bg-red-500">
               Xác thực
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => router.push('/login')}
               className="w-full text-slate-400 text-sm hover:text-white flex items-center justify-center gap-2 mt-4"
             >
@@ -143,7 +145,7 @@ export default function AdminPage() {
           <ShieldAlert className="w-7 h-7 text-emerald-400" />
           Admin Dashboard
         </h1>
-        <button 
+        <button
           onClick={() => router.push('/login')}
           className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-lg transition-colors flex items-center gap-2 text-sm"
         >
@@ -151,7 +153,7 @@ export default function AdminPage() {
         </button>
       </div>
 
-      <motion.div 
+      <motion.div
         className="w-full max-w-2xl glass-card p-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -169,13 +171,13 @@ export default function AdminPage() {
         {/* Form chọn loại tài khoản */}
         <div className="flex bg-navy-900/50 p-1 rounded-xl mb-6">
           <button
-            onClick={() => { setAccountType('advisor'); setSuccessData(null); setError(''); }}
+            onClick={() => { setAccountType('advisor'); setSuccessData(null); setError(''); setStudentId(''); }}
             className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-colors ${accountType === 'advisor' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
           >
             Giáo viên (Advisor)
           </button>
           <button
-            onClick={() => { setAccountType('student'); setSuccessData(null); setError(''); }}
+            onClick={() => { setAccountType('student'); setSuccessData(null); setError(''); setStudentId(''); }}
             className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-colors ${accountType === 'student' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
           >
             Sinh viên (Student)
@@ -183,7 +185,20 @@ export default function AdminPage() {
         </div>
 
         <form onSubmit={handleCreateAccount} className="space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 gap-5">
+            {accountType === 'student' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Mã số Sinh viên</label>
+                <input
+                  type="text"
+                  value={studentId}
+                  onChange={(e) => setStudentId(e.target.value)}
+                  className="input-dark"
+                  placeholder="MSSV"
+                  disabled={isLoading}
+                />
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">Họ và tên</label>
               <input
@@ -191,7 +206,7 @@ export default function AdminPage() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="input-dark"
-                placeholder="Nguyễn Văn A"
+                placeholder="Nguyễn Văn Mười"
                 disabled={isLoading}
               />
             </div>
@@ -202,7 +217,7 @@ export default function AdminPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="input-dark"
-                placeholder={accountType === 'advisor' ? 'gvcn@hcmus.edu.vn' : 'sv@student.hcmus.edu.vn'}
+                placeholder={accountType === 'advisor' ? 'gvcn@hcmus.edu.vn' : 'mssv@student.hcmus.edu.vn'}
                 disabled={isLoading}
               />
             </div>
@@ -225,7 +240,7 @@ export default function AdminPage() {
         {/* Hiển thị kết quả sau khi tạo thành công */}
         <AnimatePresence>
           {successData && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, height: 0, marginTop: 0 }}
               animate={{ opacity: 1, height: 'auto', marginTop: 24 }}
               className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5 overflow-hidden"
@@ -243,8 +258,8 @@ export default function AdminPage() {
                     Vui lòng copy thông tin này gửi cho người dùng. Họ sẽ được yêu cầu đổi mật khẩu ở lần đăng nhập đầu tiên.
                   </p>
                 </div>
-                
-                <button 
+
+                <button
                   onClick={copyToClipboard}
                   className="p-2 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-lg transition-colors flex flex-col items-center"
                 >

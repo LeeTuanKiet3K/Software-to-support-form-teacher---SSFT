@@ -57,7 +57,7 @@ class AuthService:
             print(f"Lỗi đăng nhập (Login Error): {e}")
             return {"success": False, "error": getErrorMessage("unavailable")}
 
-    def adminCreateStudentAccount(self, studentEmail: str, studentName: str) -> Dict[str, Any]:
+    def adminCreateStudentAccount(self, studentEmail: str, studentName: str, studentId: str) -> Dict[str, Any]:
         """
         Admin tạo tài khoản sinh viên (Admin-initiated account creation).
         Tích hợp SecurityHelpers để cấp mật khẩu.
@@ -65,6 +65,7 @@ class AuthService:
         Args:
             studentEmail (str): Email sinh viên.
             studentName (str): Tên hiển thị sinh viên.
+            studentId (str): Mã số sinh viên.
             
         Returns:
             Dict[str, Any]: Kết quả khởi tạo bao gồm UID và mật khẩu tạm.
@@ -89,7 +90,7 @@ class AuthService:
                 "is_active": True,
                 "avatar_url": "",
                 "class_id": "",
-                "student_id": ""
+                "student_id": studentId
             }
             
             profileCreated = self.m_dbHandler.createUserProfile(uid, profileData)

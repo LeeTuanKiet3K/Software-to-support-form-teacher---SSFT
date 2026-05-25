@@ -26,7 +26,7 @@ export default function LoginPage() {
       setError('Vui lòng nhập đầy đủ thông tin.');
       return;
     }
-   
+
     if (password.length < 6) {
       setError('Mật khẩu phải có ít nhất 6 ký tự.');
       return;
@@ -35,8 +35,8 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const loginEmail = (loginType === 'student' && !identifier.includes('@')) 
-        ? `${identifier}@student.hcmus.edu.vn` 
+      const loginEmail = (loginType === 'student' && !identifier.includes('@'))
+        ? `${identifier}@student.hcmus.edu.vn`
         : identifier;
 
       const response = await apiClient('/auth/login', {
@@ -48,9 +48,9 @@ export default function LoginPage() {
       });
 
       sessionStorage.setItem('ssft_role', loginType);
-      
+
       if (response.profile) {
-        sessionStorage.setItem('ssft_id', response.profile.id);
+        sessionStorage.setItem('ssft_id', response.profile.student_id ? response.profile.student_id : response.profile.id);
         sessionStorage.setItem('ssft_name', response.profile.full_name);
       } else {
         sessionStorage.setItem('ssft_id', identifier);
@@ -158,15 +158,15 @@ export default function LoginPage() {
           </h2>
           <p className="text-slate-400 text-sm mb-6">
             {loginType === 'advisor'
-              ? 'Sử dụng email do trường cấp (@hcmus.edu.vn)'
-              : 'Sử dụng Mã số Sinh viên (MSSV) của bạn'}
+              ? 'Sử dụng email giáo viên (gvcn@hcmus.edu.vn)'
+              : 'Sử dụng email sinh viên (mssv@student.hcmus.edu.vn)'}
           </p>
 
           <form onSubmit={handleLogin} className="space-y-5">
             {/* Identifier (Email / MSSV) */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                {loginType === 'advisor' ? 'Địa chỉ Email' : 'Mã số Sinh viên (MSSV)'}
+                {loginType === 'advisor' ? 'Email giáo viên' : 'Email sinh viên'}
               </label>
               <div className="relative">
                 {loginType === 'advisor' ? (
@@ -179,7 +179,7 @@ export default function LoginPage() {
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   className="input-dark pl-11"
-                  placeholder={loginType === 'advisor' ? 'email@hcmus.edu.vn' : 'VD: 24120101'}
+                  placeholder={loginType === 'advisor' ? 'gvcn@hcmus.edu.vn' : 'mssv@student.hcmus.edu.vn'}
                   disabled={isLoading}
                 />
               </div>

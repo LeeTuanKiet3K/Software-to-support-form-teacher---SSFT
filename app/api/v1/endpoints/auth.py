@@ -35,6 +35,7 @@ class LoginResponse(BaseModel):
 class CreateStudentRequest(BaseModel):
     student_email: EmailStr = Field(..., description="Email sinh viên")
     student_name: str = Field(..., min_length=2, max_length=100, description="Họ tên sinh viên")
+    student_id: str = Field(..., min_length=5, max_length=20, description="Mã số sinh viên (MSSV)")
 
 
 class CreateStudentResponse(BaseModel):
@@ -75,6 +76,7 @@ async def create_student_account(
     result = auth_service.adminCreateStudentAccount(
         studentEmail=payload.student_email,
         studentName=payload.student_name,
+        studentId=payload.student_id,
     )
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("error", "Không thể tạo tài khoản"))

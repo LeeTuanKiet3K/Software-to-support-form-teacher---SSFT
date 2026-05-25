@@ -1,10 +1,12 @@
 import os
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.v1.api import api_router
 from app.api.exceptions import firebase_exception_handler, FirebaseError
+from app.services.DataCleanupService import start_periodic_cleanup_task
 
 # Khởi tạo ứng dụng FastAPI
 app = FastAPI(
@@ -32,6 +34,11 @@ app.add_exception_handler(FirebaseError, firebase_exception_handler)
 
 # Đăng ký Router chính thức
 app.include_router(api_router, prefix="/api/v1")
+
+@app.on_event("startup")
+async def startup_event():
+    # Khởi chạy cronjob dọn dẹp rác (mặc định 30 ngày)
+    asyncio.create_task(start_periodic_cleanup_task(days_to_keep=30, interval_seconds=86400))
 
 @app.get("/")
 async def root():

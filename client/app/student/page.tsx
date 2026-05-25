@@ -27,9 +27,9 @@ type AcademicRecord = {
 };
 
 const QUICK_ACTIONS = [
-  { label: 'Xem thủ tục', icon: FileText },
-  { label: 'Hỏi về điểm', icon: BookOpen },
-  { label: 'Gặp GVCN', icon: UserCheck },
+  { label: 'Quy định của trường', icon: FileText },
+  { label: 'Tư vấn học tập', icon: BookOpen },
+  { label: 'Liên lạc GVCN', icon: UserCheck },
 ];
 
 export default function StudentPage() {
@@ -105,23 +105,23 @@ export default function StudentPage() {
     try {
       const response = await apiClient('/chat/student', {
         method: 'POST',
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           message: msg,
-          student_id: studentId 
+          student_id: studentId
         }),
       });
 
-      setMessages((prev) => [...prev, { 
-        role: 'assistant', 
-        content: response.content || response.answer, 
-        actions: response.quick_actions || response.actions, 
-        timestamp: new Date().toISOString() 
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: response.content || response.answer,
+        actions: response.quick_actions || response.actions,
+        timestamp: new Date().toISOString()
       }]);
     } catch (error) {
-      setMessages((prev) => [...prev, { 
-        role: 'assistant', 
-        content: 'Xin lỗi, hệ thống AI đang bảo trì. Vui lòng thử lại sau!', 
-        timestamp: new Date().toISOString() 
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: 'Xin lỗi, hệ thống AI đang bảo trì. Vui lòng thử lại sau!',
+        timestamp: new Date().toISOString()
       }]);
     } finally {
       setIsTyping(false);
@@ -160,12 +160,12 @@ export default function StudentPage() {
         })
       });
       if (res.success) {
-        setFormSuccess('Phiếu phản ánh của bạn đã được gửi thành công đến GVCN!');
+        setFormSuccess('Vấn đề của bạn đã được gửi thành công đến GVCN!');
         setFormTitle('');
         setFormContent('');
       }
     } catch (err: any) {
-      setFormError(err.message || 'Có lỗi xảy ra khi gửi phiếu');
+      setFormError(err.message || 'Có lỗi xảy ra khi gửi thông tin!');
     } finally {
       setFormLoading(false);
     }
@@ -233,7 +233,7 @@ export default function StudentPage() {
             onClick={() => { sessionStorage.clear(); router.push('/login'); }}
             className="btn-ghost flex items-center gap-2 text-sm py-2 px-3 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"
           >
-            <LogOut className="w-4 h-4" /> Thoát
+            <LogOut className="w-4 h-4" /> Đăng xuất
           </button>
         </div>
       </motion.header>
@@ -242,25 +242,22 @@ export default function StudentPage() {
       <div className="flex bg-navy-900/50 p-1.5 rounded-2xl my-6 border border-white/[0.05]">
         <button
           onClick={() => setActiveTab('ai')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all ${
-            activeTab === 'ai' ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-          }`}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'ai' ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+            }`}
         >
-          <Bot className="w-4 h-4" /> Hỏi Trợ lý AI
+          <Bot className="w-4 h-4" /> Hỏi Pet hỗ trợ
         </button>
         <button
           onClick={() => setActiveTab('form')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all ${
-            activeTab === 'form' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-          }`}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'form' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+            }`}
         >
-          <MessageSquare className="w-4 h-4" /> Gửi trực tiếp GVCN
+          <MessageSquare className="w-4 h-4" /> Liên hệ GVCN
         </button>
         <button
           onClick={() => setActiveTab('grades')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all ${
-            activeTab === 'grades' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-          }`}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'grades' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+            }`}
         >
           <BookOpen className="w-4 h-4" /> Bảng điểm
         </button>
@@ -268,7 +265,7 @@ export default function StudentPage() {
 
       <div className="flex-1 overflow-hidden flex flex-col relative">
         <AnimatePresence mode="wait">
-          
+
           {/* TAB 1: AI CHAT */}
           {activeTab === 'ai' && (
             <motion.div
@@ -296,7 +293,7 @@ export default function StudentPage() {
                 {messages.length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-3">
                     <Bot className="w-12 h-12 text-slate-700" />
-                    <p>Chào bạn, mình là Trợ lý AI. Mình có thể giúp gì cho bạn?</p>
+                    <p>Chào bạn, mình là Pet cưng của GVCN. Mình có thể giúp gì cho bạn?</p>
                   </div>
                 )}
                 {messages.map((msg, idx) => (
@@ -348,7 +345,7 @@ export default function StudentPage() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Nhắn tin với AI... (Enter để gửi)"
+                    placeholder="Nhắn tin với Pet... (Enter để gửi)"
                     rows={1}
                     disabled={isTyping}
                     className="input-dark flex-1 resize-none leading-relaxed max-h-32 overflow-y-auto"
@@ -377,8 +374,8 @@ export default function StudentPage() {
                     <MessageSquare className="w-6 h-6 text-purple-400" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-white">Gửi phiếu phản ánh</h2>
-                    <p className="text-sm text-slate-400">Phiếu này sẽ được gửi trực tiếp đến hộp thư của GVCN</p>
+                    <h2 className="text-xl font-bold text-white">Gửi vấn đề đến GVCN</h2>
+                    <p className="text-sm text-slate-400">Tin nhắn này sẽ được gửi trực tiếp đến hộp thư của GVCN</p>
                   </div>
                 </div>
 
@@ -388,19 +385,19 @@ export default function StudentPage() {
                     <h3 className="text-emerald-400 font-semibold mb-2">{formSuccess}</h3>
                     <p className="text-slate-400 text-sm mb-6">Giáo viên sẽ nhận được thông báo và phản hồi lại cho bạn sớm nhất có thể.</p>
                     <button onClick={() => setFormSuccess('')} className="btn-primary bg-emerald-600 hover:bg-emerald-500 px-6">
-                      Gửi phiếu khác
+                      Gửi tin nhắn khác
                     </button>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmitForm} className="space-y-5">
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">Tiêu đề vấn đề</label>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Tiêu đề</label>
                       <input
                         type="text"
                         value={formTitle}
                         onChange={(e) => setFormTitle(e.target.value)}
                         className="input-dark w-full"
-                        placeholder="Ví dụ: Xin phép nghỉ học do bệnh..."
+                        placeholder="Ví dụ: Tư vấn về tâm lý học tập..."
                         disabled={formLoading}
                         required
                       />
@@ -417,14 +414,14 @@ export default function StudentPage() {
                       />
                     </div>
                     {formError && (
-                      <p className="text-red-400 text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4"/> {formError}</p>
+                      <p className="text-red-400 text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4" /> {formError}</p>
                     )}
                     <button
                       type="submit"
                       disabled={formLoading}
                       className="w-full btn-primary bg-purple-600 hover:bg-purple-500 py-3 disabled:opacity-50"
                     >
-                      {formLoading ? 'Đang gửi...' : 'Gửi phiếu cho GVCN'}
+                      {formLoading ? 'Đang gửi...' : 'Gửi thông tin cho GVCN'}
                     </button>
                   </form>
                 )}
@@ -449,7 +446,7 @@ export default function StudentPage() {
                     </div>
                     <div>
                       <h2 className="text-xl font-bold text-white">Kết quả học tập</h2>
-                      <p className="text-sm text-slate-400">Điểm số được đồng bộ từ phòng đào tạo</p>
+                      <p className="text-sm text-slate-400">Điểm số</p>
                     </div>
                   </div>
                   {grades && (
@@ -473,7 +470,7 @@ export default function StudentPage() {
                       <BookOpen className="w-8 h-8 text-slate-500" />
                     </div>
                     <p className="text-slate-300 font-medium text-lg">Chưa có dữ liệu điểm</p>
-                    <p className="text-slate-500 text-sm mt-2">Hiện tại hệ thống chưa nhận được bảng điểm của bạn từ Phòng đào tạo.</p>
+                    <p className="text-slate-500 text-sm mt-2">Hiện tại hệ thống chưa nhận được dữ liệu điểm của bạn.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -485,11 +482,10 @@ export default function StudentPage() {
                       <div key={idx} className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-white/[0.05] hover:bg-white/[0.02] transition-colors items-center">
                         <div className="col-span-8 text-slate-200 font-medium">{sub.subject_name}</div>
                         <div className="col-span-4 text-right">
-                          <span className={`inline-block px-3 py-1 rounded-full font-bold text-sm ${
-                            sub.score >= 8 ? 'bg-emerald-500/10 text-emerald-400' :
+                          <span className={`inline-block px-3 py-1 rounded-full font-bold text-sm ${sub.score >= 8 ? 'bg-emerald-500/10 text-emerald-400' :
                             sub.score >= 5 ? 'bg-blue-500/10 text-blue-400' :
-                            'bg-red-500/10 text-red-400'
-                          }`}>
+                              'bg-red-500/10 text-red-400'
+                            }`}>
                             {sub.score.toFixed(1)}
                           </span>
                         </div>
@@ -512,12 +508,12 @@ export default function StudentPage() {
       {/* Password Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="glass-card w-full max-w-md p-6 relative"
           >
-            <button 
+            <button
               onClick={() => setShowPasswordModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white"
             >
@@ -526,7 +522,7 @@ export default function StudentPage() {
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
               <Key className="w-5 h-5 text-purple-400" /> Đổi mật khẩu
             </h2>
-            
+
             {passwordSuccess ? (
               <div className="text-center py-6">
                 <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
@@ -575,7 +571,7 @@ export default function StudentPage() {
                   </div>
                 </div>
                 {passwordError && (
-                  <p className="text-red-400 text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4"/> {passwordError}</p>
+                  <p className="text-red-400 text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4" /> {passwordError}</p>
                 )}
                 <button
                   type="submit"
