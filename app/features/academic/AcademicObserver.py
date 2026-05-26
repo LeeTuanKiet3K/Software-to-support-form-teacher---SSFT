@@ -67,8 +67,8 @@ class AcademicObserver:
 
             # Đánh dấu đã gửi hỏi thăm
             self.m_dbHandler.updateDocument(
-                collection="Academic_records",
-                docId=studentId,
+                collectionName="Academic_records",
+                documentId=studentId,
                 data={
                     "is_low_score": isLowScore,
                     "ai_check_sent": True,

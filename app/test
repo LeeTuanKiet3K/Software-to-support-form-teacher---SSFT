@@ -1,0 +1,16 @@
+from features.issue_manager.PriorityLogic import PriorityLogic
+
+# Khởi tạo thuật toán của bạn
+logic = PriorityLogic()
+
+# Tạo một câu nói giả định của sinh viên để AI phân tích
+cau_noi_sinh_vien = "Thầy ơi cứu em với, web lỗi không rút môn được, em sắp bị cảnh báo học vụ đuổi học rồi haha"
+
+# Chạy thử hàm phân loại
+priority, category, is_fallback = logic.determinePriority(cau_noi_sinh_vien)
+
+print("=== KẾT QUẢ TEST ===")
+print(f"Câu nói của sinh viên: '{cau_noi_sinh_vien}'")
+print(f"Mức độ ưu tiên: {priority}")
+print(f"Nhóm vấn đề: {category}")
+print(f"Có cần chuyển gấp cho GVCN không (Fallback)?: {is_fallback}")

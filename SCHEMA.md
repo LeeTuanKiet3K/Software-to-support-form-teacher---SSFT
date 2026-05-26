@@ -51,6 +51,18 @@
     * `message`: string (Nội dung phản hồi).
     * `created_at`: timestamp (Thời gian gửi).
 
+### **Collection: `Appointments` (Lịch hẹn gặp sinh viên)**
+* **Document ID**: Auto-generated.
+* **Fields**:
+    * `advisor_id`: string (UID của GVCN).
+    * `student_id`: string (UID của Sinh viên).
+    * `issue_id`: string (Liên kết với Document ID của Issues nếu có).
+    * `meeting_date`: timestamp (Ngày giờ hẹn gặp).
+    * `notes`: string (Ghi chú về lịch hẹn).
+    * `status`: string (`scheduled` / `completed` / `canceled`).
+    * `created_at`: timestamp (Thời gian tạo).
+    * `updated_at`: timestamp (Thời gian cập nhật).
+
 ---
 
 ## 3. Communication (Hệ thống trao đổi)

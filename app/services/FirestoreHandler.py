@@ -123,6 +123,28 @@ class FirestoreHandler:
             print(f"Failed to update document: {e}")
             return False
 
+    def deleteDocument(self, collectionName: str, documentId: str) -> bool:
+        """
+        Xóa một document khỏi Firestore (Delete document).
+        
+        Args:
+            collectionName (str): Tên collection.
+            documentId (str): ID của tài liệu cần xóa.
+            
+        Returns:
+            bool: True nếu xóa thành công, False nếu thất bại.
+        """
+        docRef = self.m_dbClient.collection(collectionName).document(documentId)
+        try:
+            docRef.delete()
+            # Ghi log nếu thao tác liên quan đến AI
+            if collectionName in ["ai_responses", "chats", "common_data", "AI_logs"]:
+                self.m_logAiAction("delete_document", collectionName, documentId)
+            return True
+        except Exception as e:
+            print(f"Failed to delete document: {e}")
+            return False
+
     def m_logAiAction(self, action: str, targetCollection: str, targetId: str) -> None:
         """
         Hàm nội bộ (Private function) để ghi nhận nhật ký thao tác liên quan đến AI.

@@ -1,21 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UploadCloud, FileSpreadsheet, Search, Filter, Download, MoreHorizontal, CheckCircle2 } from 'lucide-react';
-
-const MOCK_GRADES = [
-  { id: '24120101', name: 'Trần Quang Tuấn', math: 4.5, physics: 5.0, it: 3.5, gpa: 1.8, status: 'Nguy cơ rớt' },
-  { id: '24120102', name: 'Nguyễn Thị Bé', math: 8.5, physics: 7.0, it: 9.0, gpa: 3.2, status: 'Tốt' },
-  { id: '24120103', name: 'Lê Văn Cường', math: 6.0, physics: 6.5, it: 7.0, gpa: 2.5, status: 'Khá' },
-  { id: '24120104', name: 'Phạm Minh Đức', math: 9.0, physics: 8.5, it: 9.5, gpa: 3.8, status: 'Xuất sắc' },
-  { id: '24120105', name: 'Hoàng Thị Yến', math: 5.0, physics: 5.5, it: 6.0, gpa: 2.0, status: 'Trung bình' },
-];
+import { apiClient } from '@/lib/apiClient';
 
 export default function AcademicPage() {
+  const [grades, setGrades] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  useEffect(() => {
+    const fetchGrades = async () => {
+      try {
+        setIsLoading(true);
+        const data = await apiClient('/academic/class/24CTT4/grades');
+        setGrades(data || []);
+      } catch (error) {
+        console.error("Lỗi tải điểm:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchGrades();
+  }, []);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -27,25 +37,51 @@ export default function AcademicPage() {
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    simulateUpload();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      await uploadFile(e.dataTransfer.files[0]);
+    }
   };
 
-  const simulateUpload = () => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      await uploadFile(e.target.files[0]);
+    }
+  };
+
+  const uploadFile = async (file: File) => {
     setIsUploading(true);
-    setUploadProgress(0);
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => setIsUploading(false), 500);
-          return 100;
-        }
-        return prev + 10;
+    setUploadProgress(10);
+    
+    // Tạo hiệu ứng % chạy mượt mà trong lúc chờ Backend
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => (prev < 85 ? prev + 15 : prev));
+    }, 400);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      await apiClient('/academic/grades/upload', {
+        method: 'POST',
+        body: formData as unknown as BodyInit,
       });
-    }, 200);
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      // Reload lại danh sách điểm
+      const newData = await apiClient('/academic/class/24CTT4/grades');
+      setGrades(newData || []);
+      
+    } catch (error) {
+      console.error("Lỗi upload file:", error);
+      clearInterval(progressInterval);
+    } finally {
+      setTimeout(() => setIsUploading(false), 500);
+    }
   };
 
   return (
@@ -61,14 +97,14 @@ export default function AcademicPage() {
             <Download className="w-4 h-4" />
             Tải File Mẫu
           </button>
-          <button className="btn-primary flex items-center gap-2 text-sm">
+          <button className="btn-primary flex items-center gap-2 text-sm" onClick={() => window.location.reload()}>
             Đồng bộ từ Hệ thống
           </button>
         </div>
       </div>
 
       {/* Drag & Drop Zone */}
-      <motion.div 
+      <motion.div
         className={`relative rounded-2xl border-2 border-dashed transition-all duration-300 overflow-hidden
                     ${isDragging ? 'border-purple-500 bg-purple-500/10' : 'border-white/10 bg-navy-900/50 hover:bg-navy-800/50 hover:border-white/20'}`}
         onDragOver={handleDragOver}
@@ -85,15 +121,16 @@ export default function AcademicPage() {
           <p className="text-slate-400 text-sm mb-6 max-w-md">
             Hỗ trợ định dạng Excel (.xlsx, .xls) hoặc CSV. Hệ thống AI sẽ tự động phân tích và gắn thẻ sinh viên có nguy cơ rớt môn.
           </p>
-          <button className="px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium text-white transition-colors" onClick={simulateUpload}>
-            Chọn file từ máy tính
-          </button>
+          <label className="cursor-pointer px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium text-white transition-colors">
+            <span>Chọn file từ máy tính</span>
+            <input type="file" className="hidden" accept=".xlsx, .xls, .csv" onChange={handleFileSelect} />
+          </label>
         </div>
 
         {/* Upload Progress Overlay */}
         <AnimatePresence>
           {isUploading && (
-            <motion.div 
+            <motion.div
               className="absolute inset-0 bg-navy-900/90 backdrop-blur-sm flex flex-col items-center justify-center px-10"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -102,7 +139,7 @@ export default function AcademicPage() {
               <FileSpreadsheet className="w-10 h-10 text-emerald-400 mb-4 animate-bounce" />
               <h3 className="text-white font-semibold mb-4">Đang phân tích dữ liệu...</h3>
               <div className="w-full max-w-md bg-navy-950 rounded-full h-2 overflow-hidden border border-white/5">
-                <motion.div 
+                <motion.div
                   className="h-full bg-gradient-to-r from-emerald-500 to-blue-500"
                   initial={{ width: 0 }}
                   animate={{ width: `${uploadProgress}%` }}
@@ -115,7 +152,7 @@ export default function AcademicPage() {
       </motion.div>
 
       {/* Data Table */}
-      <motion.div 
+      <motion.div
         className="glass-card overflow-hidden flex flex-col"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -125,19 +162,15 @@ export default function AcademicPage() {
           <div className="flex items-center gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-              <input 
-                type="text" 
-                placeholder="Tìm MSSV, tên..." 
+              <input
+                type="text"
+                placeholder="Tìm MSSV, tên..."
                 className="bg-navy-950/50 border border-white/10 text-sm text-white placeholder-slate-500 rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-purple-500/50 w-64"
               />
             </div>
             <button className="p-2 border border-white/10 rounded-lg text-slate-400 hover:bg-white/5 hover:text-white transition-colors">
               <Filter className="w-4 h-4" />
             </button>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-slate-400">
-            <span className="w-2 h-2 rounded-full bg-red-500"></span> 1 Nguy cơ
-            <span className="w-2 h-2 rounded-full bg-emerald-500 ml-3"></span> 4 An toàn
           </div>
         </div>
 
@@ -148,30 +181,27 @@ export default function AcademicPage() {
                 <th className="px-6 py-4 font-medium w-10"><input type="checkbox" className="rounded border-white/20 bg-navy-800" /></th>
                 <th className="px-6 py-4 font-medium">MSSV</th>
                 <th className="px-6 py-4 font-medium">Họ và Tên</th>
-                <th className="px-6 py-4 font-medium text-right">Toán CC</th>
-                <th className="px-6 py-4 font-medium text-right">Vật lý</th>
-                <th className="px-6 py-4 font-medium text-right">Nhập môn IT</th>
                 <th className="px-6 py-4 font-medium text-right">GPA Hệ 4</th>
                 <th className="px-6 py-4 font-medium text-center">Tình trạng</th>
                 <th className="px-6 py-4 font-medium text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {MOCK_GRADES.map((student) => (
-                <tr key={student.id} className="hover:bg-white/[0.02] transition-colors group">
+              {isLoading ? (
+                 <tr><td colSpan={6} className="text-center py-8 text-slate-400">Đang tải dữ liệu...</td></tr>
+              ) : grades.length === 0 ? (
+                 <tr><td colSpan={6} className="text-center py-8 text-slate-400">Chưa có dữ liệu. Vui lòng tải file lên.</td></tr>
+              ) : grades.map((student, idx) => (
+                <tr key={student.student_id || idx} className="hover:bg-white/[0.02] transition-colors group">
                   <td className="px-6 py-4"><input type="checkbox" className="rounded border-white/20 bg-navy-800" /></td>
-                  <td className="px-6 py-4 text-slate-300 font-medium">{student.id}</td>
-                  <td className="px-6 py-4 text-white font-semibold">{student.name}</td>
-                  <td className={`px-6 py-4 text-right font-medium ${student.math < 5 ? 'text-red-400' : 'text-slate-300'}`}>{student.math.toFixed(1)}</td>
-                  <td className={`px-6 py-4 text-right font-medium ${student.physics < 5 ? 'text-red-400' : 'text-slate-300'}`}>{student.physics.toFixed(1)}</td>
-                  <td className={`px-6 py-4 text-right font-medium ${student.it < 5 ? 'text-red-400' : 'text-slate-300'}`}>{student.it.toFixed(1)}</td>
-                  <td className="px-6 py-4 text-right text-purple-400 font-bold">{student.gpa.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-slate-300 font-medium">{student.student_id}</td>
+                  <td className="px-6 py-4 text-white font-semibold">{student.name || 'Chưa cập nhật'}</td>
+                  <td className="px-6 py-4 text-right text-purple-400 font-bold">{Number(student.gpa).toFixed(2)}</td>
                   <td className="px-6 py-4 text-center">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border
-                      ${student.status === 'Nguy cơ rớt' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 
-                        student.status === 'Xuất sắc' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                      ${student.is_low_score ? 'bg-red-500/10 text-red-400 border-red-500/20' :
                         'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
-                      {student.status}
+                      {student.is_low_score ? 'Cảnh báo rớt' : 'An toàn'}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">

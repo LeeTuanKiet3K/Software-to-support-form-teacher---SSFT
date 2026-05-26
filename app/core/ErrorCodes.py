@@ -8,6 +8,7 @@ def getErrorMessage(errorCode: str) -> str:
         "auth/email-already-in-use": "Email đã được sử dụng.",
         "auth/email-already-exists": "Email đã tồn tại trong hệ thống.",
         "auth/invalid-email": "Email không hợp lệ.",
+        "INVALID_LOGIN_CREDENTIALS": "Sai email hoặc mật khẩu!",
         "permission-denied": "Bạn không có quyền truy cập.",
         "not-found": "Không tìm thấy dữ liệu.",
         "unavailable": "Dịch vụ tạm thời không khả dụng."

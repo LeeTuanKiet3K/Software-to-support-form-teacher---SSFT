@@ -50,7 +50,10 @@ class FirebaseAuthHandler:
                 from app.core.ErrorCodes import getErrorMessage
                 errorMsg = data.get("error", {}).get("message", "")
                 # Map standard REST API errors to custom error codes if needed, otherwise fallback
-                return {"success": False, "error": getErrorMessage(errorMsg) if errorMsg in ["EMAIL_NOT_FOUND", "INVALID_PASSWORD"] else f"Lỗi xác thực (Auth Error): {errorMsg}"}
+                mappedError = getErrorMessage(errorMsg)
+                if mappedError == "Đã xảy ra lỗi không xác định.":
+                    mappedError = f"Lỗi xác thực (Auth Error): {errorMsg}"
+                return {"success": False, "error": mappedError}
                 
         except Exception as e:
             return {"success": False, "error": f"Lỗi kết nối (Connection Error): {e}"}

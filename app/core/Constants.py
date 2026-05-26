@@ -20,6 +20,15 @@ class UserRole:
     """
     Vai trò người dùng trong hệ thống (User Roles).
     """
+    STUDENT = "student"     # Sinh viên
+    ADVISOR = "advisor"     # Cố vấn/Giáo viên chủ nhiệm
+    ADMIN = "admin"         # Quản trị viên
+
+
+class WarningThresholds:
+    """
+    Ngưỡng cảnh báo học vụ (AcademicObserver / Analytics).
+    """
     GPA_WARNING = 2.0
     GPA_DROP_WARNING = 0.5
     MAX_FAILED_SUBJECTS = 2
