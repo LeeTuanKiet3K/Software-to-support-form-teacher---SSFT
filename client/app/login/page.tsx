@@ -52,6 +52,9 @@ export default function LoginPage() {
       if (response.profile) {
         sessionStorage.setItem('ssft_id', response.profile.student_id ? response.profile.student_id : response.profile.id);
         sessionStorage.setItem('ssft_name', response.profile.full_name);
+        if (response.profile.class_id) {
+          sessionStorage.setItem('ssft_class_id', response.profile.class_id);
+        }
       } else {
         sessionStorage.setItem('ssft_id', identifier);
       }

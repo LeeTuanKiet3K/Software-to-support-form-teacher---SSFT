@@ -11,12 +11,20 @@ export default function AcademicPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [classId, setClassId] = useState('');
 
   useEffect(() => {
     const fetchGrades = async () => {
       try {
         setIsLoading(true);
-        const data = await apiClient('/academic/class/24CTT4/grades');
+        const storedClassId = sessionStorage.getItem('ssft_class_id');
+        if (!storedClassId) {
+          setGrades([]);
+          setIsLoading(false);
+          return;
+        }
+        setClassId(storedClassId);
+        const data = await apiClient(`/academic/class/${storedClassId}/grades`);
         setGrades(data || []);
       } catch (error) {
         console.error("Lỗi tải điểm:", error);
@@ -73,8 +81,10 @@ export default function AcademicPage() {
       setUploadProgress(100);
       
       // Reload lại danh sách điểm
-      const newData = await apiClient('/academic/class/24CTT4/grades');
-      setGrades(newData || []);
+      if (classId) {
+        const newData = await apiClient(`/academic/class/${classId}/grades`);
+        setGrades(newData || []);
+      }
       
     } catch (error) {
       console.error("Lỗi upload file:", error);
@@ -90,7 +100,7 @@ export default function AcademicPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">Quản lý Học vụ</h1>
-          <p className="text-slate-400 text-sm">Cập nhật điểm số và theo dõi kết quả học tập của lớp 24CTT4</p>
+          <p className="text-slate-400 text-sm">{classId ? `Cập nhật điểm số và theo dõi kết quả học tập của lớp ${classId}` : 'Bạn chưa được phân công lớp chủ nhiệm.'}</p>
         </div>
         <div className="flex gap-2">
           <button className="btn-ghost flex items-center gap-2 text-sm bg-navy-800 border-white/10">
@@ -189,6 +199,8 @@ export default function AcademicPage() {
             <tbody className="divide-y divide-white/5">
               {isLoading ? (
                  <tr><td colSpan={6} className="text-center py-8 text-slate-400">Đang tải dữ liệu...</td></tr>
+              ) : !classId ? (
+                 <tr><td colSpan={6} className="text-center py-8 text-slate-400">Không có dữ liệu vì bạn chưa được gán lớp.</td></tr>
               ) : grades.length === 0 ? (
                  <tr><td colSpan={6} className="text-center py-8 text-slate-400">Chưa có dữ liệu. Vui lòng tải file lên.</td></tr>
               ) : grades.map((student, idx) => (

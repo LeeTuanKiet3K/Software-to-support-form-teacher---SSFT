@@ -51,10 +51,15 @@ class IssueService:
         if issuePriority == IssuePriority.LOW and intent not in ["khieu_nai", "tam_ly"]:
             return ""
 
+        # Lấy thông tin lớp học của sinh viên
+        studentProfile = self.m_dbHandler.getUserProfile(studentId)
+        studentClassId = studentProfile.get("class_id", "") if studentProfile else ""
+
         # Thiết lập Schema dữ liệu ánh xạ lên Cloud (Cloud Data Schema)
         issueData = {
             "chat_id": chatId,
             "student_id": studentId,
+            "class_id": studentClassId,
             "intent": intent,
             "sentiment": sentiment,
             "priority": issuePriority,
@@ -85,9 +90,13 @@ class IssueService:
         Returns:
             str: Mã phiếu ghi (Ticket ID).
         """
+        studentProfile = self.m_dbHandler.getUserProfile(studentId)
+        studentClassId = studentProfile.get("class_id", "") if studentProfile else ""
+
         issueData = {
             "chat_id": "", # Biểu mẫu không gắn với phiên chat
             "student_id": studentId,
+            "class_id": studentClassId,
             "title": title,
             "category": category,
             "intent": category,  # Lưu tạm vào intent để tương thích với hệ thống cũ
@@ -106,11 +115,14 @@ class IssueService:
             print(f"Lỗi khi gửi biểu mẫu (Form Submission Error): {e}")
             return ""
 
-    def getPendingIssues(self) -> List[Dict[str, Any]]:
+    def getPendingIssues(self, advisorClassId: str = "") -> List[Dict[str, Any]]:
         """
         Truy xuất danh mục báo động cần xử lý (Fetch Pending Pipelines) để 
-        hiển thị cho Bảng điều khiển (Advisor Dashboard).
+        hiển thị cho Bảng điều khiển (Advisor Dashboard). Lọc theo lớp học nếu được cung cấp.
         
+        Args:
+            advisorClassId (str, optional): Lớp mà GVCN phụ trách để lọc issue.
+
         Returns:
             List[Dict]: Các phiếu còn trống hoặc đang trong vòng lặp làm việc, tự động sắp xếp theo độ ưu tiên.
         """
@@ -126,11 +138,15 @@ class IssueService:
             # Xử lý đóng gói Pipeline Object (Pipeline Mapping)
             for doc in openQuery:
                 data = doc.to_dict()
+                if advisorClassId and data.get("class_id") != advisorClassId:
+                    continue
                 data['issue_id'] = doc.id
                 pendingIssuesList.append(data)
                 
             for doc in inProgQuery:
                 data = doc.to_dict()
+                if advisorClassId and data.get("class_id") != advisorClassId:
+                    continue
                 data['issue_id'] = doc.id
                 pendingIssuesList.append(data)
                 

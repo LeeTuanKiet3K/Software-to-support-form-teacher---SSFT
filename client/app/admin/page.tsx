@@ -18,6 +18,7 @@ export default function AdminPage() {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [studentId, setStudentId] = useState('');
+  const [classId, setClassId] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -56,8 +57,8 @@ export default function AdminPage() {
     try {
       const endpoint = accountType === 'advisor' ? '/auth/advisors' : '/auth/students';
       const body = accountType === 'advisor'
-        ? { advisor_email: email, advisor_name: fullName }
-        : { student_email: email, student_name: fullName, student_id: studentId };
+        ? { advisor_email: email, advisor_name: fullName, class_id: classId }
+        : { student_email: email, student_name: fullName, student_id: studentId, class_id: classId };
 
       const response = await apiClient(endpoint, {
         method: 'POST',
@@ -72,6 +73,7 @@ export default function AdminPage() {
         setEmail('');
         setFullName('');
         setStudentId('');
+        setClassId('');
       }
     } catch (err: any) {
       setError(err.message || 'Có lỗi xảy ra khi tạo tài khoản.');
@@ -171,13 +173,13 @@ export default function AdminPage() {
         {/* Form chọn loại tài khoản */}
         <div className="flex bg-navy-900/50 p-1 rounded-xl mb-6">
           <button
-            onClick={() => { setAccountType('advisor'); setSuccessData(null); setError(''); setStudentId(''); }}
+            onClick={() => { setAccountType('advisor'); setSuccessData(null); setError(''); setStudentId(''); setClassId(''); }}
             className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-colors ${accountType === 'advisor' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
           >
             Giáo viên (Advisor)
           </button>
           <button
-            onClick={() => { setAccountType('student'); setSuccessData(null); setError(''); setStudentId(''); }}
+            onClick={() => { setAccountType('student'); setSuccessData(null); setError(''); setStudentId(''); setClassId(''); }}
             className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-colors ${accountType === 'student' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
           >
             Sinh viên (Student)
@@ -207,6 +209,17 @@ export default function AdminPage() {
                 onChange={(e) => setFullName(e.target.value)}
                 className="input-dark"
                 placeholder="Nguyễn Văn Mười"
+                disabled={isLoading}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Mã lớp chủ nhiệm</label>
+              <input
+                type="text"
+                value={classId}
+                onChange={(e) => setClassId(e.target.value)}
+                className="input-dark"
+                placeholder="24CTT4"
                 disabled={isLoading}
               />
             </div>

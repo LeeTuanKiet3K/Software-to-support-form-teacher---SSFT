@@ -57,15 +57,16 @@ class AuthService:
             print(f"Lỗi đăng nhập (Login Error): {e}")
             return {"success": False, "error": getErrorMessage("unavailable")}
 
-    def adminCreateStudentAccount(self, studentEmail: str, studentName: str, studentId: str) -> Dict[str, Any]:
+    def adminCreateStudentAccount(self, studentEmail: str, studentName: str, studentId: str, classId: str) -> Dict[str, Any]:
         """
         Admin tạo tài khoản sinh viên (Admin-initiated account creation).
         Tích hợp SecurityHelpers để cấp mật khẩu.
         
         Args:
-            studentEmail (str): Email sinh viên.
-            studentName (str): Tên hiển thị sinh viên.
-            studentId (str): Mã số sinh viên.
+        studentEmail (str): Email sinh viên.
+        studentName (str): Tên hiển thị sinh viên.
+        studentId (str): Mã số sinh viên.
+        classId (str): Mã lớp học của sinh viên.
             
         Returns:
             Dict[str, Any]: Kết quả khởi tạo bao gồm UID và mật khẩu tạm.
@@ -89,7 +90,7 @@ class AuthService:
                 "requires_password_change": True, # Force password change on first login
                 "is_active": True,
                 "avatar_url": "",
-                "class_id": "",
+                "class_id": classId,
                 "student_id": studentId
             }
             
@@ -110,13 +111,14 @@ class AuthService:
             print(f"Lỗi khởi tạo sinh viên (Error creating student): {e}")
             return {"success": False, "error": getErrorMessage("unavailable")}
 
-    def adminCreateAdvisorAccount(self, advisorEmail: str, advisorName: str) -> Dict[str, Any]:
+    def adminCreateAdvisorAccount(self, advisorEmail: str, advisorName: str, classId: str = "") -> Dict[str, Any]:
         """
         Admin tạo tài khoản giáo viên (Admin-initiated advisor account creation).
         
         Args:
-            advisorEmail (str): Email giáo viên.
-            advisorName (str): Tên hiển thị giáo viên.
+        advisorEmail (str): Email giáo viên.
+        advisorName (str): Tên hiển thị giáo viên.
+        classId (str, optional): Mã lớp giáo viên làm chủ nhiệm.
             
         Returns:
             Dict[str, Any]: Kết quả khởi tạo bao gồm UID và mật khẩu tạm.
@@ -135,6 +137,7 @@ class AuthService:
                 "requires_password_change": True,
                 "is_active": True,
                 "avatar_url": "",
+                "class_id": classId,
             }
             
             profileCreated = self.m_dbHandler.createUserProfile(uid, profileData)

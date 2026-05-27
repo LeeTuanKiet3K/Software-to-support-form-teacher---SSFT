@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [advisorName, setAdvisorName] = useState('Giáo viên');
   const [advisorId, setAdvisorId] = useState('');
+  const [advisorClassId, setAdvisorClassId] = useState('');
 
   // Password Modal State
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -36,7 +37,8 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
-      const data = await apiClient('/dashboard/summary');
+      const classId = sessionStorage.getItem('ssft_class_id') || '';
+      const data = await apiClient(`/dashboard/summary?class_id=${classId}`);
       setStats(data.stats || { urgent: 0, pending: 0, resolved: 0, totalStudents: 0 });
       setIssues(data.issues || []);
     } catch (error) {
@@ -83,8 +85,10 @@ export default function DashboardPage() {
     if (typeof window !== 'undefined') {
       const name = sessionStorage.getItem('ssft_name');
       const uid = sessionStorage.getItem('ssft_id');
+      const classId = sessionStorage.getItem('ssft_class_id');
       if (name) setAdvisorName(name);
       if (uid) setAdvisorId(uid);
+      if (classId) setAdvisorClassId(classId);
     }
   }, []);
 
@@ -118,7 +122,7 @@ export default function DashboardPage() {
           </div>
           <p className="text-slate-400 text-sm mt-1">
             Xin chào, <span className="text-slate-200 font-medium">{advisorName}</span> ·
-            Lớp <span className="text-purple-300 font-medium">24CTT4</span> ·{' '}
+            Lớp <span className="text-purple-300 font-medium">{advisorClassId || 'Chưa cập nhật'}</span> ·{' '}
             <span className="text-slate-500">{stats.totalStudents} sinh viên</span>
           </p>
         </div>

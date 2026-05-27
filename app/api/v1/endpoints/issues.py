@@ -73,13 +73,14 @@ VALID_PRIORITIES = {"URGENT", "HIGH", "MEDIUM", "LOW"}
 
 @router.get("/summary")
 async def get_dashboard_summary(
+    class_id: str = "",
     issue_service: IssueService = Depends(get_issue_service)
 ):
     """Trả về dữ liệu KPI tổng quan cho Dashboard GVCN"""
     
     # Kéo danh sách issue từ DB
     try:
-        raw_issues = issue_service.getPendingIssues()
+        raw_issues = issue_service.getPendingIssues(advisorClassId=class_id)
     except Exception:
         raw_issues = []
 
@@ -261,6 +262,7 @@ VALID_PRIORITIES = {"URGENT", "HIGH", "MEDIUM", "LOW"}
 
 @router.get("/pending", response_model=PendingIssuesResponse)
 async def get_pending_issues(
+    class_id: str = "",
     issue_service: IssueService = Depends(get_issue_service),
 ):
     """
@@ -271,7 +273,7 @@ async def get_pending_issues(
     """
     print("[issues/pending] Đang truy xuất danh sách vấn đề chờ xử lý...")
     try:
-        raw_issues = issue_service.getPendingIssues()
+        raw_issues = issue_service.getPendingIssues(advisorClassId=class_id)
     except Exception as e:
         print(f"[issues/pending] Lỗi truy xuất Firestore (DB fetch error): {e}")
         raise HTTPException(

@@ -30,12 +30,20 @@ export default function StudentsPage() {
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [classId, setClassId] = useState('');
 
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         setIsLoading(true);
-        const data = await apiClient('/academic/class/24CTT4/students');
+        const storedClassId = sessionStorage.getItem('ssft_class_id');
+        if (!storedClassId) {
+          setStudents([]);
+          setIsLoading(false);
+          return;
+        }
+        setClassId(storedClassId);
+        const data = await apiClient(`/academic/class/${storedClassId}/students`);
         setStudents(data || []);
       } catch (error) {
         console.error("Lỗi tải danh sách:", error);
@@ -52,7 +60,7 @@ export default function StudentsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">Danh sách Sinh viên</h1>
-          <p className="text-slate-400 text-sm">Quản lý tổng quan lớp 24CTT4</p>
+          <p className="text-slate-400 text-sm">{classId ? `Quản lý tổng quan lớp ${classId}` : 'Bạn chưa được phân công lớp chủ nhiệm.'}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -72,6 +80,8 @@ export default function StudentsPage() {
       {/* Grid Danh sách Sinh viên */}
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center text-slate-400">Đang tải danh sách sinh viên...</div>
+      ) : !classId ? (
+        <div className="flex-1 flex items-center justify-center text-slate-400">Không có dữ liệu vì bạn chưa được gán lớp.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto custom-scrollbar pr-2 pb-6">
           {students.map((student, idx) => (
@@ -174,7 +184,7 @@ export default function StudentsPage() {
                      
                       <div className="flex-1 flex flex-col justify-center">
                         <h2 className="text-2xl font-bold text-white mb-1">{selectedStudent.name}</h2>
-                        <p className="text-purple-400 font-medium text-sm mb-4">MSSV: {selectedStudent.id} · Lớp 24CTT4</p>
+                        <p className="text-purple-400 font-medium text-sm mb-4">MSSV: {selectedStudent.id} · Lớp {classId}</p>
                        
                         <div className="grid grid-cols-2 gap-y-3 text-sm text-slate-300">
                           <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-slate-500" /> KTX Khu B, Dĩ An</div>

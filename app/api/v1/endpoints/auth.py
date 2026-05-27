@@ -36,6 +36,7 @@ class CreateStudentRequest(BaseModel):
     student_email: EmailStr = Field(..., description="Email sinh viên")
     student_name: str = Field(..., min_length=2, max_length=100, description="Họ tên sinh viên")
     student_id: str = Field(..., min_length=5, max_length=20, description="Mã số sinh viên (MSSV)")
+    class_id: str = Field(..., min_length=1, max_length=50, description="Mã lớp học (vd: 24CTT4)")
 
 
 class CreateStudentResponse(BaseModel):
@@ -47,6 +48,7 @@ class CreateStudentResponse(BaseModel):
 class CreateAdvisorRequest(BaseModel):
     advisor_email: EmailStr = Field(..., description="Email giáo viên")
     advisor_name: str = Field(..., min_length=2, max_length=100, description="Họ tên giáo viên")
+    class_id: str = Field("", description="Mã lớp chủ nhiệm (nếu có)")
 
 class CreateAdvisorResponse(BaseModel):
     success: bool
@@ -77,6 +79,7 @@ async def create_student_account(
         studentEmail=payload.student_email,
         studentName=payload.student_name,
         studentId=payload.student_id,
+        classId=payload.class_id,
     )
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("error", "Không thể tạo tài khoản"))
@@ -96,6 +99,7 @@ async def create_advisor_account(
     result = auth_service.adminCreateAdvisorAccount(
         advisorEmail=payload.advisor_email,
         advisorName=payload.advisor_name,
+        classId=payload.class_id,
     )
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("error", "Không thể tạo tài khoản"))
