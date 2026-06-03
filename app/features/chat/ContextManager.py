@@ -1,52 +1,51 @@
-import google.generativeai as genai
+from groq import Groq
 from typing import List, Dict, Any
 from app.core.Config import AppConfig
 from app.services.FirestoreHandler import FirestoreHandler
 from app.features.chat.PromptTemplates import PROMPT_CONTEXT_SUMMARIZATION
 
+
 class ContextManager:
     """
     Trình quản lý ngữ cảnh hội thoại (Context Manager).
-    Quản lý bộ nhớ các đoạn hội thoại (Conversation Memory) để AI hiểu mạch trò chuyện.
+    Quản lý bộ nhớ các đoạn hội thoại để AI hiểu mạch trò chuyện.
     """
-    
-    # Sử dụng Singleton Pattern để giữ bộ nhớ đồng nhất toàn hệ thống
     m_instance = None
 
     def __new__(cls):
-        """Khởi tạo ContextManager (Singleton Instantiation)."""
+        """
+        Khởi tạo ContextManager.
+        Chỉ tạo thể hiện mới nếu chưa tồn tại — các lần gọi sau trả về cùng một object.
+        """
         if cls.m_instance is None:
             cls.m_instance = super(ContextManager, cls).__new__(cls)
-            # Khởi tạo liên kết cơ sở dữ liệu (Database Link)
+
             cls.m_instance.m_dbHandler = FirestoreHandler()
-            
-            # Bộ nhớ tạm lưu trữ RAM (Temporary memory mapping)
+
             cls.m_instance.m_conversationHistory = {}
-            
-            # Cấu hình độc lập API nội bộ để chạy luồng tóm tắt (Independent AI Configuration)
-            geminiKey = AppConfig.GEMINI_API_KEY
-            if geminiKey:
-                genai.configure(api_key=geminiKey)
-                cls.m_instance.m_geminiModel = genai.GenerativeModel('gemini-1.5-flash')
-                
+
+            groqKey = AppConfig.GROQ_API_KEY
+            if groqKey:
+                cls.m_instance.m_groqClient = Groq(api_key=groqKey)
+
+
         return cls.m_instance
 
     def addMessage(self, chatId: str, role: str, content: str) -> None:
         """
-        Lưu tin nhắn mới vào bộ nhớ tạm (Add message caching).
-        
+        Lưu tin nhắn mới vào bộ nhớ tạm và đồng bộ xuống Firestore.
+
         Args:
-            chatId (str): Mã định danh phiên chat hiện tại.
-            role (str): Vai trò của tác giả (VD: user, assistant).
-            content (str): Nội dung chi tiết của bản ghi.
+            chatId (str): ID phiên hội thoại.
+            role (str): Vai trò người gửi — 'user' hoặc 'assistant'.
+            content (str): Nội dung tin nhắn.
         """
         if chatId not in self.m_conversationHistory:
             self.m_conversationHistory[chatId] = []
-            
+
         messageRecord = {"role": role, "content": content}
         self.m_conversationHistory[chatId].append(messageRecord)
-        
-        # Đồng bộ dư liệu song song (Persistent Storage Replication) xuống Firestore
+
         try:
             self.m_dbHandler.saveDocument("chats", {
                 "chat_id": chatId,
@@ -54,59 +53,63 @@ class ContextManager:
                 "content": content
             })
         except Exception as systemErr:
-            # Ghi nhận lỗi nhưng không ngắt chương trình (Non-blocking exception)
-            print(f"Lỗi sao lưu lịch sử tin nhắn (Chat Persistence Error): {systemErr}")
+            print(f"Error persisting chat history: {systemErr}")
 
     def getChatContext(self, chatId: str, limit: int = 5) -> List[Dict[str, str]]:
         """
-        Lấy N tin nhắn gần nhất để làm ngữ cảnh cho AI (Rolling Context Retrieval).
-        
+        Lấy N tin nhắn gần nhất để làm ngữ cảnh cho AI.
+        Giới hạn số lượng tin nhắn giúp tối ưu token truyền vào model.
+
         Args:
             chatId (str): ID phiên hội thoại.
-            limit (int): Kích thước cửa sổ trượt (Sliding window size).
-            
+            limit (int): Số tin nhắn tối đa cần lấy, mặc định 5.
+
         Returns:
-            List[Dict]: Một danh sách lịch sử tin nhắn mới nhất.
+            List[Dict]: Danh sách tin nhắn theo thứ tự thời gian.
         """
         historyList = self.m_conversationHistory.get(chatId, [])
         return historyList[-max(limit, 1):]
 
     def summarizeOldContext(self, chatId: str) -> str:
         """
-        Sử dụng Gemini chạy nền tóm tắt các cuộc hội thoại quá lớn (Context Summarization),
-        nhằm tối ưu mật độ token truyền vào (Token Compression).
-        
+        Dùng Gemini tóm tắt các tin nhắn cũ khi lịch sử hội thoại quá dài
+        Mục tiêu: nén lịch sử thành 1-2 câu để tiết kiệm token ở các lượt gọi tiếp theo.
+
+        Chiến lược:
+            - Giữ nguyên 4 tin nhắn gần nhất
+            - Tóm tắt tất cả tin nhắn cũ hơn bằng Gemini
+
         Args:
-            chatId (str): Mã session trò chuyện.
-            
+            chatId (str): ID phiên hội thoại cần tóm tắt .
+
         Returns:
-            str: Bản tóm tắt súc tích, nếu hội thoại ngắn sẽ trả về dạng rỗng.
+            str: Chuỗi tóm tắt ngữ cảnh, hoặc chuỗi rỗng nếu chưa đủ dài để tóm tắt.
         """
         historyList = self.m_conversationHistory.get(chatId, [])
-        
-        # Token Optimization Check: Chỉ kích hoạt tóm tắt khi nội dung quá dài
         if len(historyList) <= 6:
             return ""
-            
+
         try:
             oldMessages = historyList[:-4]
             contextBody = "\n".join([f"{msg['role']}: {msg['content']}" for msg in oldMessages])
-            
+
             promptInjection = PROMPT_CONTEXT_SUMMARIZATION.format(context_body=contextBody)
-            
-            # Phát sinh kết quả song song (Background Generation)
-            response = self.m_geminiModel.generate_content(promptInjection)
-            summaryBody = response.text
-            
-            # Ghi log lịch trình (Audit Trail Logging)
-            self.m_dbHandler.saveDocument("AI_logs", {
+
+            response = self.m_instance.m_groqClient.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": promptInjection}],
+            max_tokens=256,
+            )
+            summaryBody = response.choices[0].message.content
+
+            self.m_instance.m_dbHandler.saveDocument("AI_logs", {
                 "action": "summarize_context",
                 "chat_id": chatId,
                 "summary": summaryBody
             })
-            
+
             return summaryBody
-            
+
         except Exception as error:
-            print(f"Tiến trình tóm tắt ngữ cảnh gián đoạn (Context Summarization Failed): {error}")
+            print(f"Context Summarization Failed: {error}")
             return ""

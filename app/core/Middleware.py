@@ -2,6 +2,7 @@ import json
 import time
 import requests
 import google.generativeai as genai
+from groq import Groq
 from typing import Dict, Any
 
 from firebase_admin import firestore
@@ -20,21 +21,17 @@ class Middleware:
     """
 
     def __init__(self) -> None:
-        """
-        Khởi tạo và kết nối các client máy chủ suy luận (Models Instantiation).
-        """
         # Cấu hình cho Local Inference LLM (Llama)
         self.m_ollamaUrl = AppConfig.OLLAMA_BASE_URL
         self.m_ollamaModel = AppConfig.OLLAMA_MODEL_NAME
-        
-        # Cấu hình cho Cloud Inference LLM (Gemini)
-        self.m_geminiKey = AppConfig.GEMINI_API_KEY
-        if self.m_geminiKey:
-            genai.configure(api_key=self.m_geminiKey)
-            # Khởi tạo instance kết nối (Service Binding)
-            self.m_geminiModel = genai.GenerativeModel('gemini-2.5-flash')
-            
-        # Khởi chạy Dependency Injection với các Module đã lập trình trước (Data Linking)
+
+        # Cấu hình cho Cloud Inference LLM (Groq) — thay thế Gemini
+        self.m_groqKey = AppConfig.GROQ_API_KEY
+        if self.m_groqKey:
+            # Khởi tạo Groq client (Service Binding)
+            self.m_groqClient = Groq(api_key=self.m_groqKey)
+
+        # Dependency Injection các module còn lại (giữ nguyên)
         self.m_dbHandler = FirestoreHandler()
         self.m_searchEngine = SearchEngine()
         self.m_contextManager = ContextManager()
