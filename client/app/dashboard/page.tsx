@@ -32,6 +32,7 @@ export default function DashboardPage() {
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
@@ -85,6 +86,13 @@ export default function DashboardPage() {
       const uid = sessionStorage.getItem('ssft_id');
       if (name) setAdvisorName(name);
       if (uid) setAdvisorId(uid);
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('action') === 'change-password') {
+        setShowPasswordModal(true);
+        // Optional: clear the param from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
     }
   }, []);
 
@@ -121,27 +129,6 @@ export default function DashboardPage() {
             Lớp <span className="text-purple-300 font-medium">24CTT4</span> ·{' '}
             <span className="text-slate-500">{stats.totalStudents} sinh viên</span>
           </p>
-        </div>
-        
-        <div className="flex gap-4">
-          <button className="relative p-2 text-slate-400 hover:text-white transition-colors">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-          </button>
-          
-          <button
-            onClick={() => setShowPasswordModal(true)}
-            className="btn-ghost flex items-center gap-2 text-sm py-2 px-3 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10"
-          >
-            <Key className="w-4 h-4" /> Đổi MK
-          </button>
-          
-          <button 
-            onClick={() => { sessionStorage.clear(); router.push('/login'); }}
-            className="btn-ghost flex items-center gap-2 text-sm py-2 px-4 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"
-          >
-            <LogOut className="w-4 h-4" /> Thoát
-          </button>
         </div>
       </motion.div>
 

@@ -40,3 +40,8 @@ def get_auth_handler():
     """Dependency cung cấp FirebaseAuthHandler instance (xác thực và đăng xuất)."""
     from app.services.FirebaseAuthHandler import FirebaseAuthHandler
     return FirebaseAuthHandler()
+
+def get_calendar_service():
+    """Dependency cung cấp CalendarService instance."""
+    from app.services.CalendarService import CalendarService
+    return CalendarService()

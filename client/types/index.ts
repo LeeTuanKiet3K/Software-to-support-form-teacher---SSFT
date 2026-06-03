@@ -36,6 +36,9 @@ export interface Issue {
   is_advisor_viewed: boolean;
   created_at: string;
   updated_at?: string;
+  title?: string;
+  category?: string;
+  content?: string;
 }
 
 // Tin nhắn chat (Chat Message)

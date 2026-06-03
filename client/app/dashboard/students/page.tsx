@@ -30,13 +30,26 @@ export default function StudentsPage() {
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         setIsLoading(true);
         const data = await apiClient('/academic/class/24CTT4/students');
-        setStudents(data || []);
+        const studentData = data || [];
+        setStudents(studentData);
+        
+        // Auto-select student if search param is present
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const searchQuery = params.get('search');
+          if (searchQuery) {
+            setSearchTerm(searchQuery);
+            const match = studentData.find((s: any) => s.name?.includes(searchQuery) || s.id?.includes(searchQuery));
+            if (match) setSelectedStudent(match);
+          }
+        }
       } catch (error) {
         console.error("Lỗi tải danh sách:", error);
       } finally {
@@ -45,6 +58,11 @@ export default function StudentsPage() {
     };
     fetchStudents();
   }, []);
+
+  const filteredStudents = students.filter(s => 
+    s.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    s.id?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto h-[calc(100vh-73px)] flex flex-col">
@@ -59,6 +77,8 @@ export default function StudentsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input
               type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Tìm MSSV, tên..."
               className="bg-navy-900 border border-white/10 text-sm text-white placeholder-slate-500 rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-purple-500/50 w-64"
             />
@@ -74,7 +94,10 @@ export default function StudentsPage() {
         <div className="flex-1 flex items-center justify-center text-slate-400">Đang tải danh sách sinh viên...</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto custom-scrollbar pr-2 pb-6">
-          {students.map((student, idx) => (
+          {filteredStudents.length === 0 ? (
+            <div className="col-span-full text-center py-10 text-slate-400">Không tìm thấy sinh viên nào phù hợp.</div>
+          ) : (
+            filteredStudents.map((student, idx) => (
             <motion.div
               key={student.id}
               className="glass-card p-5 cursor-pointer hover:border-purple-500/30 transition-all group"
@@ -105,7 +128,7 @@ export default function StudentsPage() {
                 <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-purple-400 transition-colors shrink-0" />
               </div>
             </motion.div>
-          ))}
+          )))}
         </div>
       )}
 

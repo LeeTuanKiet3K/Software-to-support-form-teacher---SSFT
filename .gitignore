@@ -33,3 +33,5 @@ Thumbs.db
 #UI
 node_modules/
 .next/
+client/node_modules/
+client/.next/
