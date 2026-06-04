@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard, MessageSquare, GraduationCap,
-  Bell, LogOut, ChevronRight, Users, BookOpen,
+  Bell, LogOut, ChevronRight, Users, BookOpen, Calendar
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -19,6 +19,7 @@ const advisorNav = [
   { href: '/dashboard/chat', label: 'Trợ lý AI', icon: MessageSquare },
   { href: '/dashboard/students', label: 'Sinh viên', icon: Users },
   { href: '/dashboard/academic', label: 'Học vụ', icon: BookOpen },
+  { href: '/dashboard/calendar', label: 'Lịch trình', icon: Calendar },
 ];
 
 export function Sidebar({ userName, userEmail, role = 'advisor', unreadCount = 0 }: SidebarProps) {
@@ -100,14 +101,6 @@ export function Sidebar({ userName, userEmail, role = 'advisor', unreadCount = 0
           </div>
         </div>
 
-        {/* Logout */}
-        <button
-          onClick={handleLogout}
-          className="nav-item w-full text-red-400/70 hover:text-red-300 hover:bg-red-500/5"
-        >
-          <LogOut className="w-[18px] h-[18px] shrink-0" />
-          <span className="text-sm">Đăng xuất</span>
-        </button>
       </div>
     </motion.aside>
   );

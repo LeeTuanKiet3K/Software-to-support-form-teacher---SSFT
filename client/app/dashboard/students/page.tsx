@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, AreaChart, Area , Tooltip } from 'recharts';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { User, BookOpen, HeartPulse, MessageSquare, Award, StickyNote, MapPin, Phone, Mail, GraduationCap, X, Search, Filter, ChevronRight, Maximize, Minimize } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 
@@ -30,21 +30,26 @@ export default function StudentsPage() {
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [classId, setClassId] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         setIsLoading(true);
-        const storedClassId = sessionStorage.getItem('ssft_class_id');
-        if (!storedClassId) {
-          setStudents([]);
-          setIsLoading(false);
-          return;
+        const data = await apiClient('/academic/class/24CTT4/students');
+        const studentData = data || [];
+        setStudents(studentData);
+
+        // Auto-select student if search param is present
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const searchQuery = params.get('search');
+          if (searchQuery) {
+            setSearchTerm(searchQuery);
+            const match = studentData.find((s: any) => s.name?.includes(searchQuery) || s.id?.includes(searchQuery));
+            if (match) setSelectedStudent(match);
+          }
         }
-        setClassId(storedClassId);
-        const data = await apiClient(`/academic/class/${storedClassId}/students`);
-        setStudents(data || []);
       } catch (error) {
         console.error("Lỗi tải danh sách:", error);
       } finally {
@@ -53,6 +58,11 @@ export default function StudentsPage() {
     };
     fetchStudents();
   }, []);
+
+  const filteredStudents = students.filter(s =>
+    s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.id?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto h-[calc(100vh-73px)] flex flex-col">
@@ -67,6 +77,8 @@ export default function StudentsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input
               type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Tìm MSSV, tên..."
               className="bg-navy-900 border border-white/10 text-sm text-white placeholder-slate-500 rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-purple-500/50 w-64"
             />
@@ -84,38 +96,41 @@ export default function StudentsPage() {
         <div className="flex-1 flex items-center justify-center text-slate-400">Không có dữ liệu vì bạn chưa được gán lớp.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto custom-scrollbar pr-2 pb-6">
-          {students.map((student, idx) => (
-            <motion.div
-              key={student.id}
-              className="glass-card p-5 cursor-pointer hover:border-purple-500/30 transition-all group"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              onClick={() => setSelectedStudent(student)}
-            >
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shrink-0">
-                  {student.name ? student.name.charAt(0) : 'U'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-semibold truncate group-hover:text-purple-400 transition-colors">{student.name}</h3>
-                  <p className="text-slate-400 text-sm mb-3">{student.id}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium border
-                      ${student.status === 'Nguy cơ' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                        student.status === 'Cảnh báo' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                        'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
-                      {student.status}
-                    </span>
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-navy-800 border border-white/5 text-slate-300">
-                      GPA: {student.gpa}
-                    </span>
+          {filteredStudents.length === 0 ? (
+            <div className="col-span-full text-center py-10 text-slate-400">Không tìm thấy sinh viên nào phù hợp.</div>
+          ) : (
+            filteredStudents.map((student, idx) => (
+              <motion.div
+                key={student.id}
+                className="glass-card p-5 cursor-pointer hover:border-purple-500/30 transition-all group"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                onClick={() => setSelectedStudent(student)}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shrink-0">
+                    {student.name ? student.name.charAt(0) : 'U'}
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-white font-semibold truncate group-hover:text-purple-400 transition-colors">{student.name}</h3>
+                    <p className="text-slate-400 text-sm mb-3">{student.id}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium border
+                      ${student.status === 'Nguy cơ' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                          student.status === 'Cảnh báo' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                            'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+                        {student.status}
+                      </span>
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-navy-800 border border-white/5 text-slate-300">
+                        GPA: {student.gpa}
+                      </span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-purple-400 transition-colors shrink-0" />
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-purple-400 transition-colors shrink-0" />
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            )))}
         </div>
       )}
 
@@ -128,7 +143,7 @@ export default function StudentsPage() {
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setSelectedStudent(null)}
             />
-           
+
             <motion.div
               className={`relative bg-navy-950 h-full border-l border-white/10 shadow-2xl flex flex-col transition-all duration-500 ease-in-out ${isFullscreen ? 'w-full max-w-full' : 'w-full max-w-5xl'}`}
               initial={{ x: '100%' }}
@@ -161,14 +176,14 @@ export default function StudentsPage() {
               {/* Bento Box Content */}
               <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 auto-rows-[160px]">
-                 
+
                   {/* Ô 1: THÔNG TIN CÁ NHÂN */}
                   <motion.div
                     className="md:col-span-2 md:row-span-2 glass-card p-6 relative overflow-hidden group"
                     initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}
                   >
                     <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl transition-all duration-700" />
-                   
+
                     <div className="flex gap-6 relative z-10 h-full">
                       <div className="shrink-0 flex flex-col items-center gap-3">
                         <div className="w-24 h-24 rounded-2xl bg-purple-500 p-1 shadow-glow-purple">
@@ -181,11 +196,11 @@ export default function StudentsPage() {
                           <span className="text-xs font-medium text-emerald-400">Đang học</span>
                         </div>
                       </div>
-                     
+
                       <div className="flex-1 flex flex-col justify-center">
                         <h2 className="text-2xl font-bold text-white mb-1">{selectedStudent.name}</h2>
                         <p className="text-purple-400 font-medium text-sm mb-4">MSSV: {selectedStudent.id} · Lớp {classId}</p>
-                       
+
                         <div className="grid grid-cols-2 gap-y-3 text-sm text-slate-300">
                           <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-slate-500" /> KTX Khu B, Dĩ An</div>
                           <div className="flex items-center gap-2"><GraduationCap className="w-4 h-4 text-slate-500" /> CNTT - Khóa 2024</div>
@@ -216,7 +231,7 @@ export default function StudentsPage() {
                         <AreaChart data={gpaData}>
                           <defs>
                             <linearGradient id="colorGpa" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#a855f7" stopOpacity={0.8}/><stop offset="95%" stopColor="#a855f7" stopOpacity={0}/>
+                              <stop offset="5%" stopColor="#a855f7" stopOpacity={0.8} /><stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
                             </linearGradient>
                           </defs>
                           <Area type="monotone" dataKey="gpa" stroke="#a855f7" fillOpacity={1} fill="url(#colorGpa)" />

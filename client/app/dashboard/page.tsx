@@ -33,6 +33,7 @@ export default function DashboardPage() {
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
@@ -88,7 +89,13 @@ export default function DashboardPage() {
       const classId = sessionStorage.getItem('ssft_class_id');
       if (name) setAdvisorName(name);
       if (uid) setAdvisorId(uid);
-      if (classId) setAdvisorClassId(classId);
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('action') === 'change-password') {
+        setShowPasswordModal(true);
+        // Optional: clear the param from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
     }
   }, []);
 
@@ -96,7 +103,7 @@ export default function DashboardPage() {
     try {
       setResolvingId(issueId);
       await apiClient(`/issues/${issueId}/resolve`, { method: 'POST' });
-      await fetchDashboardData(); 
+      await fetchDashboardData();
     } catch (error) {
       console.error("Lỗi giải quyết vấn đề:", error);
     } finally {
@@ -125,27 +132,6 @@ export default function DashboardPage() {
             Lớp <span className="text-purple-300 font-medium">{advisorClassId || 'Chưa cập nhật'}</span> ·{' '}
             <span className="text-slate-500">{stats.totalStudents} sinh viên</span>
           </p>
-        </div>
-        
-        <div className="flex gap-4">
-          <button className="relative p-2 text-slate-400 hover:text-white transition-colors">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-          </button>
-          
-          <button
-            onClick={() => setShowPasswordModal(true)}
-            className="btn-ghost flex items-center gap-2 text-sm py-2 px-3 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10"
-          >
-            <Key className="w-4 h-4" /> Đổi MK
-          </button>
-          
-          <button 
-            onClick={() => { sessionStorage.clear(); router.push('/login'); }}
-            className="btn-ghost flex items-center gap-2 text-sm py-2 px-4 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"
-          >
-            <LogOut className="w-4 h-4" /> Thoát
-          </button>
         </div>
       </motion.div>
 
@@ -220,18 +206,18 @@ export default function DashboardPage() {
           <WeeklyBarChart data={mockBarData} />
         </motion.div>
       </div>
-      
+
       {/* Password Modal */}
       <AnimatePresence>
         {showPasswordModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className="glass-card w-full max-w-md p-6 relative"
             >
-              <button 
+              <button
                 onClick={() => setShowPasswordModal(false)}
                 className="absolute top-4 right-4 text-slate-400 hover:text-white"
               >
@@ -240,7 +226,7 @@ export default function DashboardPage() {
               <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                 <Key className="w-5 h-5 text-purple-400" /> Đổi mật khẩu
               </h2>
-              
+
               {passwordSuccess ? (
                 <div className="text-center py-6">
                   <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
@@ -289,7 +275,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   {passwordError && (
-                    <p className="text-red-400 text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4"/> {passwordError}</p>
+                    <p className="text-red-400 text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4" /> {passwordError}</p>
                   )}
                   <button
                     type="submit"
