@@ -31,6 +31,7 @@ export default function StudentsPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const classId = "24CTT4";
 
   useEffect(() => {
     const fetchStudents = async () => {

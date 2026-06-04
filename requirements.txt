@@ -4,6 +4,7 @@ streamlit>=1.32.0
 # --- API Layer (Tầng API) ---
 fastapi>=0.115.0
 uvicorn>=0.30.0
+python-multipart>=0.0.9
 pydantic>=2.7.0
 email-validator>=2.1.1
 
@@ -13,6 +14,7 @@ python-dotenv>=1.0.1
 
 # --- AI & Natural Language Processing (AI & Xử lý ngôn ngữ tự nhiên) ---
 google-generativeai>=0.4.1
+groq>=0.4.2
 # Thay thế textblob bằng rapidfuzz để tìm kiếm từ khóa chính xác và nhanh hơn
 rapidfuzz>=3.6.2
 
