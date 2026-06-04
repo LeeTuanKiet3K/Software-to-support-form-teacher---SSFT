@@ -65,6 +65,8 @@ class IssueService:
             "priority": issuePriority,
             "status": IssueStatus.OPEN,  # Đưa vào hàng chờ Xử lý của GVCN (Pending Status)
             "is_advisor_viewed": False,   # Metric theo dõi trạng thái chưa đọc
+            "unread_by_advisor": 0,
+            "unread_by_student": 0,
             "created_at": firestore.SERVER_TIMESTAMP
         }
         
@@ -105,6 +107,8 @@ class IssueService:
             "priority": priority,
             "status": IssueStatus.OPEN,
             "is_advisor_viewed": False,
+            "unread_by_advisor": 0,
+            "unread_by_student": 0,
             "created_at": firestore.SERVER_TIMESTAMP
         }
         
@@ -129,7 +133,7 @@ class IssueService:
         pendingIssuesList = []
         try:
             # Tạo tham chiếu truy vấn Database (Ref builder)
-            issuesRef = self.m_dbHandler.m_dbClient.collection("Issues")
+            issuesRef = self.m_dbHandler.m_db.collection("Issues")
             
             # Kết hợp truy vấn hai Status đặc thù OPEN và IN_PROGRESS
             openQuery = issuesRef.where(filter=firestore.FieldFilter('status', '==', IssueStatus.OPEN)).stream()
@@ -138,14 +142,16 @@ class IssueService:
             # Xử lý đóng gói Pipeline Object (Pipeline Mapping)
             for doc in openQuery:
                 data = doc.to_dict()
-                if advisorClassId and data.get("class_id") != advisorClassId:
+                issue_class = data.get("class_id")
+                if advisorClassId and issue_class and issue_class != advisorClassId:
                     continue
                 data['issue_id'] = doc.id
                 pendingIssuesList.append(data)
                 
             for doc in inProgQuery:
                 data = doc.to_dict()
-                if advisorClassId and data.get("class_id") != advisorClassId:
+                issue_class = data.get("class_id")
+                if advisorClassId and issue_class and issue_class != advisorClassId:
                     continue
                 data['issue_id'] = doc.id
                 pendingIssuesList.append(data)
@@ -165,6 +171,25 @@ class IssueService:
             
         except Exception as e:
             print(f"Lỗi truy xuất trạng thái kẹt lại (Fetch Pipeline Exception): {e}")
+            return []
+
+    def getStudentIssues(self, studentId: str) -> List[Dict[str, Any]]:
+        """Truy xuất các phiếu vấn đề của một sinh viên."""
+        studentIssuesList = []
+        try:
+            issuesRef = self.m_dbHandler.m_db.collection("Issues")
+            query = issuesRef.where(filter=firestore.FieldFilter('student_id', '==', studentId)).stream()
+            
+            for doc in query:
+                data = doc.to_dict()
+                data['issue_id'] = doc.id
+                studentIssuesList.append(data)
+                
+            # Sắp xếp mới nhất lên đầu
+            studentIssuesList.sort(key=lambda item: item.get("created_at", ""), reverse=True)
+            return studentIssuesList
+        except Exception as e:
+            print(f"Lỗi truy xuất phiếu sinh viên: {e}")
             return []
 
     def updateIssueStatus(self, issueId: str, newStatus: str) -> bool:
@@ -191,3 +216,75 @@ class IssueService:
         except Exception as dbError:
             print(f"Sự cố hệ thống cập nhật (DB Status Update Crash): {dbError}")
             return False
+
+    def addMessageToIssue(self, issueId: str, senderId: str, senderRole: str, content: str) -> Dict[str, Any]:
+        """Thêm tin nhắn trao đổi vào Phiếu vấn đề."""
+        messageData = {
+            "issue_id": issueId,
+            "sender_id": senderId,
+            "sender_role": senderRole,  # 'STUDENT' or 'ADVISOR'
+            "content": content,
+            "created_at": firestore.SERVER_TIMESTAMP
+        }
+        
+        try:
+            # 1. Lưu tin nhắn vào IssueMessages
+            msgId = self.m_dbHandler.saveDocument("IssueMessages", messageData)
+            messageData["message_id"] = msgId
+            
+            # 2. Cập nhật số lượng tin chưa đọc và đổi status nếu GVCN reply
+            issueData = self.m_dbHandler.getDocument("Issues", issueId)
+            if issueData:
+                updates = {"updated_at": firestore.SERVER_TIMESTAMP}
+                if senderRole == "STUDENT":
+                    updates["unread_by_advisor"] = issueData.get("unread_by_advisor", 0) + 1
+                else:
+                    updates["unread_by_student"] = issueData.get("unread_by_student", 0) + 1
+                    # Đổi trạng thái nếu GVCN trả lời
+                    if issueData.get("status") == IssueStatus.OPEN:
+                        updates["status"] = IssueStatus.IN_PROGRESS
+
+                self.m_dbHandler.updateDocument("Issues", issueId, updates)
+
+            return messageData
+        except Exception as e:
+            print(f"Lỗi thêm tin nhắn vào issue (Add msg error): {e}")
+            return {}
+
+    def getIssueMessages(self, issueId: str) -> List[Dict[str, Any]]:
+        """Lấy lịch sử trò chuyện của một phiếu."""
+        try:
+            query = self.m_dbHandler.m_db.collection("IssueMessages")\
+                .where(filter=firestore.FieldFilter('issue_id', '==', issueId))\
+                .limit(100)
+            
+            result = []
+            for doc in query.stream():
+                data = doc.to_dict()
+                data["message_id"] = doc.id
+                result.append(data)
+                
+            # Sort in memory to avoid Firestore composite index requirement
+            result.sort(key=lambda x: x.get("created_at") or 0)
+            return result
+        except Exception as e:
+            print(f"Lỗi lấy lịch sử tin nhắn: {e}")
+            return []
+
+    def markIssueAsRead(self, issueId: str, readerRole: str) -> bool:
+        """Đánh dấu là đã đọc (reset unread_count)."""
+        try:
+            updates = {}
+            if readerRole == "STUDENT":
+                updates["unread_by_student"] = 0
+            elif readerRole == "ADVISOR":
+                updates["unread_by_advisor"] = 0
+                updates["is_advisor_viewed"] = True
+
+            if updates:
+                return self.m_dbHandler.updateDocument("Issues", issueId, updates)
+            return False
+        except Exception as e:
+            print(f"Lỗi đánh dấu đã đọc (Mark read error): {e}")
+            return False
+

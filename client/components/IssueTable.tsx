@@ -8,11 +8,14 @@ import {
 import type { Issue, IssuePriority, IssueStatus } from '@/types';
 import { PriorityBadge, StatusBadge } from '@/components/ui/Badge';
 import { INTENT_LABELS, SENTIMENT_LABELS } from '@/lib/mockData';
+import { IssueChat } from '@/components/IssueChat';
 
 interface IssueTableProps {
   issues: Issue[];
   onResolve: (issueId: string) => void;
   isResolvingId?: string;
+  currentUserId: string;
+  currentUserRole: 'STUDENT' | 'ADVISOR';
 }
 
 function formatRelativeTime(dateStr: string): string {
@@ -28,7 +31,7 @@ const priorityOrder: Record<IssuePriority, number> = {
   URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3,
 };
 
-export function IssueTable({ issues, onResolve, isResolvingId }: IssueTableProps) {
+export function IssueTable({ issues, onResolve, isResolvingId, currentUserId, currentUserRole }: IssueTableProps) {
   const [filterStatus, setFilterStatus] = useState<IssueStatus | 'ALL'>('ALL');
   const [filterPriority, setFilterPriority] = useState<IssuePriority | 'ALL'>('ALL');
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
@@ -36,7 +39,11 @@ export function IssueTable({ issues, onResolve, isResolvingId }: IssueTableProps
   const filtered = issues
     .filter((i) => filterStatus === 'ALL' || i.status === filterStatus)
     .filter((i) => filterPriority === 'ALL' || i.priority === filterPriority)
-    .sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+    .sort((a, b) => {
+      const pA = priorityOrder[a.priority as IssuePriority] ?? 4;
+      const pB = priorityOrder[b.priority as IssuePriority] ?? 4;
+      return pA - pB;
+    });
 
   return (
     <div className="space-y-4">
@@ -119,9 +126,11 @@ export function IssueTable({ issues, onResolve, isResolvingId }: IssueTableProps
                       <span className="text-slate-100 font-semibold text-sm truncate">
                         {issue.student_id}
                       </span>
-                      {!issue.is_advisor_viewed && issue.status !== 'RESOLVED' && (
-                        <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse shrink-0 shadow-[0_0_8px_#a855f7]" />
-                      )}
+                      {((currentUserRole === 'ADVISOR' && issue.unread_by_advisor && issue.unread_by_advisor > 0) || 
+                        (currentUserRole === 'STUDENT' && issue.unread_by_student && issue.unread_by_student > 0) ||
+                        (!issue.is_advisor_viewed && issue.status !== 'RESOLVED' && currentUserRole === 'ADVISOR')) ? (
+                        <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse shrink-0 shadow-[0_0_8px_#a855f7]" title="Có tin nhắn/cập nhật mới" />
+                      ) : null}
                     </div>
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                       <PriorityBadge priority={issue.priority} />
@@ -228,9 +237,16 @@ export function IssueTable({ issues, onResolve, isResolvingId }: IssueTableProps
                   </div>
                 </div>
 
+                {/* 2-Way Chat Box */}
+                <IssueChat 
+                  issueId={selectedIssue.id || selectedIssue.issue_id} 
+                  currentUserId={currentUserId} 
+                  currentUserRole={currentUserRole} 
+                />
+
                 {/* Quick Actions */}
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-300 mb-3">Thao tác nhanh</h4>
+                  <h4 className="text-sm font-semibold text-slate-300 mb-3 mt-4">Thao tác nhanh</h4>
                   <div className="flex gap-2">
                     <button className="flex-1 flex flex-col items-center gap-2 p-3 bg-navy-800 border border-white/5 rounded-xl hover:bg-navy-700 transition-colors group">
                       <div className="p-2 bg-blue-500/10 rounded-full text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors">
@@ -259,14 +275,14 @@ export function IssueTable({ issues, onResolve, isResolvingId }: IssueTableProps
                 {selectedIssue.status !== 'RESOLVED' ? (
                   <button
                     onClick={() => {
-                      onResolve(selectedIssue.id);
+                      onResolve(selectedIssue.id || selectedIssue.issue_id);
                       setSelectedIssue(null);
                     }}
-                    disabled={isResolvingId === selectedIssue.id}
+                    disabled={isResolvingId === (selectedIssue.id || selectedIssue.issue_id)}
                     className="btn-primary w-full flex items-center justify-center gap-2 py-3 rounded-xl
                                disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(168,85,247,0.3)] hover:shadow-[0_0_25px_rgba(168,85,247,0.5)] transition-all"
                   >
-                    {isResolvingId === selectedIssue.id ? (
+                    {isResolvingId === (selectedIssue.id || selectedIssue.issue_id) ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         Đang xử lý...

@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GraduationCap, Send, Sparkles, Bot, User, BookOpen, FileText, UserCheck, LogOut, MessageSquare, AlertCircle, CheckCircle2, RefreshCw, Key, X, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/apiClient';
+import { IssueTable } from '@/components/IssueTable';
+import type { Issue } from '@/types';
 
 type ChatMessage = {
   role: 'user' | 'assistant';
@@ -13,7 +15,7 @@ type ChatMessage = {
   actions?: string[];
 };
 
-type TabType = 'ai' | 'form' | 'grades';
+type TabType = 'ai' | 'form' | 'grades' | 'my-issues';
 
 type GradeRecord = {
   subject_name: string;
@@ -54,6 +56,10 @@ export default function StudentPage() {
   const [grades, setGrades] = useState<AcademicRecord | null>(null);
   const [gradesLoading, setGradesLoading] = useState(false);
 
+  // My Issues State
+  const [myIssues, setMyIssues] = useState<Issue[]>([]);
+  const [issuesLoading, setIssuesLoading] = useState(false);
+
   // Password Modal State
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -78,7 +84,31 @@ export default function StudentPage() {
     if (activeTab === 'grades' && !grades) {
       fetchGrades();
     }
+    
+    let interval: NodeJS.Timeout;
+    if (activeTab === 'my-issues') {
+      fetchMyIssues();
+      interval = setInterval(fetchMyIssues, 10000); // Tự động cập nhật mỗi 10 giây
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [activeTab]);
+
+  const fetchMyIssues = async () => {
+    setIssuesLoading(true);
+    try {
+      const data = await apiClient(`/issues/student/${studentId}`);
+      if (data && data.issues) {
+        setMyIssues(data.issues);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIssuesLoading(false);
+    }
+  };
 
   const fetchGrades = async () => {
     setGradesLoading(true);
@@ -163,6 +193,8 @@ export default function StudentPage() {
         setFormSuccess('Vấn đề của bạn đã được gửi thành công đến GVCN!');
         setFormTitle('');
         setFormContent('');
+        // Tự động tải lại danh sách
+        fetchMyIssues();
       }
     } catch (err: any) {
       setFormError(err.message || 'Có lỗi xảy ra khi gửi thông tin!');
@@ -260,6 +292,13 @@ export default function StudentPage() {
             }`}
         >
           <BookOpen className="w-4 h-4" /> Bảng điểm
+        </button>
+        <button
+          onClick={() => setActiveTab('my-issues')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'my-issues' ? 'bg-orange-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+            }`}
+        >
+          <AlertCircle className="w-4 h-4" /> Vấn đề của tôi
         </button>
       </div>
 
@@ -497,6 +536,44 @@ export default function StudentPage() {
                       </p>
                     )}
                   </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* TAB 4: MY ISSUES */}
+          {activeTab === 'my-issues' && (
+            <motion.div
+              key="tab-my-issues"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="flex flex-col h-full absolute inset-0 overflow-y-auto pb-10"
+            >
+              <div className="glass-card p-6 md:p-8 max-w-4xl mx-auto w-full mt-4">
+                <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
+                  <div className="p-3 bg-orange-500/20 rounded-xl">
+                    <AlertCircle className="w-6 h-6 text-orange-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Danh sách vấn đề đã gửi</h2>
+                    <p className="text-sm text-slate-400">Theo dõi trạng thái và trao đổi với GVCN</p>
+                  </div>
+                </div>
+
+                {issuesLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                    <RefreshCw className="w-8 h-8 animate-spin mb-4 text-orange-500/50" />
+                    <p>Đang tải danh sách...</p>
+                  </div>
+                ) : (
+                  <IssueTable 
+                    issues={myIssues} 
+                    onResolve={() => {}} // SV không được phép tự đóng issue
+                    isResolvingId={undefined}
+                    currentUserId={studentId}
+                    currentUserRole="STUDENT"
+                  />
                 )}
               </div>
             </motion.div>

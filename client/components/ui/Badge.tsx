@@ -12,12 +12,13 @@ const priorityConfig = {
   LOW:    { className: 'badge-low',    icon: <ChevronDown className="w-3 h-3" /> },
 };
 
-export function PriorityBadge({ priority }: { priority: IssuePriority }) {
-  const config = priorityConfig[priority];
+export function PriorityBadge({ priority }: { priority: IssuePriority | string }) {
+  const config = priorityConfig[priority as IssuePriority] || priorityConfig['LOW'];
+  const label = PRIORITY_LABELS[priority as IssuePriority] || priority;
   return (
     <span className={config.className}>
       {config.icon}
-      {PRIORITY_LABELS[priority]}
+      {label}
     </span>
   );
 }
@@ -30,11 +31,12 @@ const statusConfig: Record<IssueStatus, { bg: string; text: string }> = {
   PENDING_ADVISOR:  { bg: 'bg-amber-500/10 border-amber-500/30', text: 'text-amber-400' },
 };
 
-export function StatusBadge({ status }: { status: IssueStatus }) {
-  const cfg = statusConfig[status];
+export function StatusBadge({ status }: { status: IssueStatus | string }) {
+  const cfg = statusConfig[status as IssueStatus] || statusConfig['OPEN'];
+  const label = STATUS_LABELS[status as IssueStatus] || status;
   return (
     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${cfg.bg} ${cfg.text}`}>
-      {STATUS_LABELS[status]}
+      {label}
     </span>
   );
 }

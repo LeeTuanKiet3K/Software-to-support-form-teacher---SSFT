@@ -6,11 +6,9 @@ import { Search, Bell, Menu, AlertTriangle, MessageSquare, CheckCircle2 } from '
 
 import { useRouter } from 'next/navigation';
 
-const INITIAL_NOTIFICATIONS = [
-  { id: 1, title: 'Cảnh báo khẩn cấp (P0)', desc: 'Sinh viên Trần Quang Tuấn báo cáo căng thẳng kéo dài.', time: '5 phút trước', type: 'urgent', read: false, url: '/dashboard/students?search=Trần Quang Tuấn' },
-  { id: 2, title: 'Cập nhật hệ thống', desc: 'Đã hoàn tất tính toán GPA học kỳ 1.', time: '2 giờ trước', type: 'system', read: true, url: '/dashboard/academic' },
-  { id: 3, title: 'Tin nhắn mới', desc: 'Có 3 sinh viên vừa nhắn tin cho Trợ lý AI.', time: '3 giờ trước', type: 'message', read: true, url: '/dashboard/chat?prompt=Tóm tắt tin nhắn AI' },
-];
+import { apiClient } from '@/lib/apiClient';
+
+const INITIAL_NOTIFICATIONS: any[] = [];
 
 export function Header() {
   const router = useRouter();
@@ -21,6 +19,18 @@ export function Header() {
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  const fetchNotifications = async () => {
+    try {
+      const classId = sessionStorage.getItem('ssft_class_id') || '';
+      const data = await apiClient(`/notifications/list?class_id=${classId}`);
+      if (data && data.notifications) {
+        setNotifications(data.notifications);
+      }
+    } catch (error) {
+      console.error("Lỗi lấy thông báo:", error);
+    }
+  };
 
   const handleMarkAllAsRead = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -54,9 +64,15 @@ export function Header() {
 
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
+    
+    // Fetch notifications initially and every 10 seconds
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10000);
+    
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
+      clearInterval(interval);
     };
   }, []);
 

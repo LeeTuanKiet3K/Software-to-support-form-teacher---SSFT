@@ -34,6 +34,8 @@ export interface Issue {
   priority: IssuePriority;
   status: IssueStatus;
   is_advisor_viewed: boolean;
+  unread_by_advisor?: number;
+  unread_by_student?: number;
   created_at: string;
   updated_at?: string;
   title?: string;
@@ -49,6 +51,15 @@ export interface ChatMessage {
   content: string;
   timestamp?: string;
   actions?: string[];       // Quick action tags
+}
+
+export interface IssueMessage {
+  message_id: string;
+  issue_id: string;
+  sender_id: string;
+  sender_role: 'STUDENT' | 'ADVISOR';
+  content: string;
+  created_at?: string;
 }
 
 // KPI thống kê (Key Performance Indicators)

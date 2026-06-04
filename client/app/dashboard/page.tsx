@@ -89,6 +89,7 @@ export default function DashboardPage() {
       const classId = sessionStorage.getItem('ssft_class_id');
       if (name) setAdvisorName(name);
       if (uid) setAdvisorId(uid);
+      if (classId) setAdvisorClassId(classId);
 
       const params = new URLSearchParams(window.location.search);
       if (params.get('action') === 'change-password') {
@@ -97,12 +98,21 @@ export default function DashboardPage() {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
+
+    const interval = setInterval(() => {
+      fetchDashboardData();
+    }, 10000); // Tự động cập nhật mỗi 10 giây
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleResolve = async (issueId: string) => {
     try {
       setResolvingId(issueId);
-      await apiClient(`/issues/${issueId}/resolve`, { method: 'POST' });
+      await apiClient(`/issues/${issueId}/status`, { 
+        method: 'PATCH',
+        body: JSON.stringify({ new_status: 'RESOLVED' })
+      });
       await fetchDashboardData();
     } catch (error) {
       console.error("Lỗi giải quyết vấn đề:", error);
@@ -192,6 +202,8 @@ export default function DashboardPage() {
             issues={issues}
             onResolve={handleResolve}
             isResolvingId={resolvingId}
+            currentUserId={advisorId}
+            currentUserRole="ADVISOR"
           />
         </motion.div>
 
