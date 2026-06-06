@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, AlertTriangle, CheckCircle2, MessageSquare, Check, Trash2, Filter } from 'lucide-react';
+import { Bell, AlertTriangle, CheckCircle2, MessageSquare, Check, Trash2, Filter, Send, X } from 'lucide-react';
+import { apiClient } from '@/lib/apiClient';
 
 const INITIAL_NOTIFICATIONS = [
   { id: 1, title: 'Cảnh báo khẩn cấp (P0)', desc: 'Sinh viên Trần Quang Tuấn báo cáo căng thẳng kéo dài. Vui lòng liên hệ với sinh viên sớm nhất có thể.', time: '5 phút trước', type: 'urgent', read: false },
@@ -15,6 +16,46 @@ const INITIAL_NOTIFICATIONS = [
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+
+  const [showBroadcastModal, setShowBroadcastModal] = useState(false);
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastContent, setBroadcastContent] = useState('');
+  const [broadcastLoading, setBroadcastLoading] = useState(false);
+  const [broadcastSuccess, setBroadcastSuccess] = useState('');
+
+  const handleBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!broadcastTitle || !broadcastContent) return;
+    setBroadcastLoading(true);
+    setBroadcastSuccess('');
+    try {
+      const advisorId = sessionStorage.getItem('ssft_id') || 'ADVISOR_01';
+      const classId = sessionStorage.getItem('ssft_class_id') || '24CTT4';
+      
+      const res = await apiClient('/notifications/broadcast', {
+        method: 'POST',
+        body: JSON.stringify({
+          advisor_id: advisorId,
+          class_id: classId,
+          title: broadcastTitle,
+          content: broadcastContent
+        })
+      });
+      if (res.success) {
+        setBroadcastSuccess(res.message);
+        setTimeout(() => {
+          setShowBroadcastModal(false);
+          setBroadcastSuccess('');
+          setBroadcastTitle('');
+          setBroadcastContent('');
+        }, 2000);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setBroadcastLoading(false);
+    }
+  };
 
   const handleMarkAllAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
@@ -58,6 +99,14 @@ export default function NotificationsPage() {
             </button>
           </div>
           
+          <button 
+            onClick={() => setShowBroadcastModal(true)}
+            className="btn-primary flex items-center gap-2 text-sm bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg transition-colors"
+          >
+            <Send className="w-4 h-4" />
+            Gửi thông báo lớp
+          </button>
+
           <button 
             onClick={handleMarkAllAsRead}
             className="btn-ghost flex items-center gap-2 text-sm bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 px-4 py-2 rounded-lg transition-colors border border-purple-500/20"
@@ -138,6 +187,65 @@ export default function NotificationsPage() {
           )}
         </div>
       </div>
+
+      {/* Broadcast Modal */}
+      {showBroadcastModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-card w-full max-w-lg p-6 relative"
+          >
+            <button
+              onClick={() => setShowBroadcastModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+              <Send className="w-5 h-5 text-purple-400" /> Gửi thông báo lớp
+            </h2>
+
+            {broadcastSuccess ? (
+              <div className="text-center py-6">
+                <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+                <p className="text-emerald-400 font-medium">{broadcastSuccess}</p>
+              </div>
+            ) : (
+              <form onSubmit={handleBroadcast} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Tiêu đề</label>
+                  <input
+                    type="text"
+                    value={broadcastTitle}
+                    onChange={(e) => setBroadcastTitle(e.target.value)}
+                    className="input-dark w-full"
+                    placeholder="Nhập tiêu đề thông báo..."
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Nội dung</label>
+                  <textarea
+                    value={broadcastContent}
+                    onChange={(e) => setBroadcastContent(e.target.value)}
+                    className="input-dark w-full min-h-[120px]"
+                    placeholder="Nhập nội dung thông báo cho sinh viên..."
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={broadcastLoading}
+                  className="w-full btn-primary bg-purple-600 hover:bg-purple-500 py-2.5 mt-2 disabled:opacity-50 flex justify-center items-center gap-2"
+                >
+                  {broadcastLoading ? 'Đang gửi...' : <><Send className="w-4 h-4" /> Gửi thông báo</>}
+                </button>
+              </form>
+            )}
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

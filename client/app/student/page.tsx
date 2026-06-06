@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GraduationCap, Send, Sparkles, Bot, User, BookOpen, FileText, UserCheck, LogOut, MessageSquare, AlertCircle, CheckCircle2, RefreshCw, Key, X, Eye, EyeOff } from 'lucide-react';
+import { GraduationCap, Send, Sparkles, Bot, User, BookOpen, FileText, UserCheck, LogOut, MessageSquare, AlertCircle, CheckCircle2, RefreshCw, Key, X, Eye, EyeOff, Bell, AlertTriangle, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/apiClient';
 import { IssueTable } from '@/components/IssueTable';
@@ -73,6 +73,58 @@ export default function StudentPage() {
   // Get student ID from session
   const studentId = typeof window !== 'undefined' ? sessionStorage.getItem('ssft_id') || '24120101' : '24120101';
   const studentName = typeof window !== 'undefined' ? sessionStorage.getItem('ssft_name') || 'Sinh viên' : 'Sinh viên';
+
+  // Notifications State
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotif, setShowNotif] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const fetchNotifications = async () => {
+    try {
+      const data = await apiClient(`/notifications/student/${studentId}`);
+      if (data && data.notifications) {
+        setNotifications(data.notifications);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleMarkAsRead = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await apiClient(`/notifications/${id}/read`, { method: 'PUT' });
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteNotification = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await apiClient(`/notifications/${id}`, { method: 'DELETE' });
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotif(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'ai') {
@@ -254,7 +306,77 @@ export default function StudentPage() {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-4 items-center">
+          {/* Notification Bell */}
+          <div className="relative" ref={notifRef}>
+            <button 
+              onClick={() => setShowNotif(!showNotif)}
+              className={`relative p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/5 transition-colors group
+                          ${showNotif ? 'bg-white/10 text-white' : ''}`}
+            >
+              <Bell className={`w-5 h-5 ${notifications.filter(n => !n.read).length > 0 ? 'group-hover:animate-wiggle' : ''}`} />
+              {notifications.filter(n => !n.read).length > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-navy-900"></span>
+              )}
+            </button>
+
+            {/* Notification Dropdown */}
+            <AnimatePresence>
+              {showNotif && (
+                <motion.div
+                  className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-navy-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="flex items-center justify-between p-4 border-b border-white/5 bg-navy-800/50">
+                    <h3 className="text-white font-semibold text-sm">Thông báo</h3>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                    {notifications.length === 0 ? (
+                      <div className="p-6 text-center text-slate-400 text-sm">Chưa có thông báo nào.</div>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div 
+                          key={notif.id} 
+                          className={`p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors flex gap-3 group/item
+                                     ${!notif.read ? 'bg-purple-500/5' : ''}`}
+                        >
+                          <div className="shrink-0 mt-1">
+                            {notif.type === 'announcement' ? <Bell className="w-4 h-4 text-purple-400" /> : 
+                             notif.type === 'urgent' ? <AlertTriangle className="w-4 h-4 text-red-400" /> :
+                             <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm mb-1 ${!notif.read ? 'text-white font-semibold' : 'text-slate-300 font-medium'}`}>
+                              {notif.title}
+                            </p>
+                            <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed whitespace-pre-wrap">{notif.desc}</p>
+                            <p className="text-[10px] text-slate-500 mt-2">{notif.time}</p>
+                          </div>
+                          <div className="flex flex-col gap-2 items-center opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity">
+                            {!notif.read && (
+                              <button onClick={(e) => handleMarkAsRead(notif.id, e)} className="p-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-md tooltip" title="Đánh dấu đã đọc">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <button onClick={(e) => handleDeleteNotification(notif.id, e)} className="p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-md tooltip" title="Xóa">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="h-6 w-px bg-white/10 hidden sm:block"></div>
+
+          <div className="flex gap-2">
           <button
             onClick={() => setShowPasswordModal(true)}
             className="btn-ghost flex items-center gap-2 text-sm py-2 px-3 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10"
@@ -267,6 +389,7 @@ export default function StudentPage() {
           >
             <LogOut className="w-4 h-4" /> Đăng xuất
           </button>
+        </div>
         </div>
       </motion.header>
 
