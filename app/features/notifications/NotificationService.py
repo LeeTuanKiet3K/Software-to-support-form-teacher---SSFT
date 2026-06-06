@@ -161,3 +161,61 @@ class NotificationService:
                 }
             }
         )
+
+    def sendClassAnnouncement(self, advisorId: str, classId: str, title: str, content: str) -> int:
+        """
+        Gửi thông báo chung cho toàn bộ sinh viên trong một lớp.
+        
+        Args:
+            advisorId (str): ID của GVCN thực hiện gửi.
+            classId (str): Mã lớp nhận thông báo.
+            title (str): Tiêu đề thông báo.
+            content (str): Nội dung thông báo.
+            
+        Returns:
+            int: Số lượng sinh viên đã nhận được thông báo.
+        """
+        # 1. Lấy danh sách sinh viên thuộc lớp
+        filters = [
+            ("class_id", "==", classId),
+            ("role", "==", "student")
+        ]
+        students = self.m_dbHandler.queryDocuments(collectionName="Users", filters=filters, limitCount=200)
+        
+        if not students:
+            return 0
+            
+        # 2. Gửi thông báo cho từng sinh viên
+        sent_count = 0
+        for student in students:
+            studentId = student.get("id")
+            if not studentId:
+                continue
+                
+            self.m_dbHandler.addDocument(
+                collection="Notifications",
+                data={
+                    "user_id": studentId,
+                    "title": title,
+                    "content": content,
+                    "type": "announcement",
+                    "is_read": False
+                }
+            )
+            sent_count += 1
+            
+        # 3. Ghi log hành động của GVCN
+        self.m_dbHandler.addDocument(
+            collection="Audit_logs",
+            data={
+                "user_id": advisorId,
+                "action": "CLASS_ANNOUNCEMENT_SENT",
+                "target_id": classId,
+                "metadata": {
+                    "title": title,
+                    "recipient_count": sent_count
+                }
+            }
+        )
+        
+        return sent_count

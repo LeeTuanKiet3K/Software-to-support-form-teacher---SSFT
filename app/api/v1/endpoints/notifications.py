@@ -105,4 +105,67 @@ async def get_notification_list(class_id: str = ""):
                 "url": f"/dashboard?issue={issue.get('issue_id')}"
             })
             
+            
     return {"notifications": notifications}
+
+
+class BroadcastRequest(BaseModel):
+    advisor_id: str
+    class_id: str
+    title: str
+    content: str
+
+@router.post("/broadcast", response_model=NotificationActionResponse, status_code=201)
+async def broadcast_announcement(
+    payload: BroadcastRequest,
+    notification_service: NotificationService = Depends(get_notification_service),
+):
+    count = notification_service.sendClassAnnouncement(
+        advisorId=payload.advisor_id,
+        classId=payload.class_id,
+        title=payload.title,
+        content=payload.content,
+    )
+    return NotificationActionResponse(
+        success=True,
+        message=f"Đã gửi thông báo tới {count} sinh viên."
+    )
+
+@router.get("/student/{student_id}")
+async def get_student_notifications(student_id: str):
+    from app.services.FirestoreHandler import FirestoreHandler
+    db = FirestoreHandler()
+    filters = [("user_id", "==", student_id)]
+    notifications = db.queryDocuments(collectionName="Notifications", filters=filters, limitCount=50)
+    
+    result = []
+    for n in notifications:
+        time_str = formatTimestamp(n.get("created_at"))
+        if not time_str:
+            time_str = "Vừa xong"
+        result.append({
+            "id": n.get("id"),
+            "title": n.get("title", "Thông báo mới"),
+            "desc": n.get("content", ""),
+            "time": time_str,
+            "type": n.get("type", "system"),
+            "read": n.get("is_read", False),
+        })
+    
+    # Sắp xếp thô để thông báo mới nhất lên trên
+    result.reverse()
+    return {"notifications": result}
+
+@router.put("/{notification_id}/read")
+async def mark_notification_read(notification_id: str):
+    from app.services.FirestoreHandler import FirestoreHandler
+    db = FirestoreHandler()
+    db.updateDocument("Notifications", notification_id, {"is_read": True})
+    return {"success": True}
+
+@router.delete("/{notification_id}")
+async def delete_notification(notification_id: str):
+    from app.services.FirestoreHandler import FirestoreHandler
+    db = FirestoreHandler()
+    db.deleteDocument("Notifications", notification_id)
+    return {"success": True}
