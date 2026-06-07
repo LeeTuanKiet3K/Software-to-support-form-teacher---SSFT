@@ -50,6 +50,7 @@ export default function LoginPage() {
       sessionStorage.setItem('ssft_role', loginType);
 
       if (response.profile) {
+        sessionStorage.setItem('ssft_uid', response.profile.id);
         sessionStorage.setItem('ssft_id', response.profile.student_id ? response.profile.student_id : response.profile.id);
         sessionStorage.setItem('ssft_name', response.profile.full_name);
         if (response.profile.class_id) {
@@ -62,10 +63,13 @@ export default function LoginPage() {
         sessionStorage.setItem('auth_token', response.token);
       }
 
+      const requiresPasswordChange = response.profile?.requires_password_change;
+      const redirectAction = requiresPasswordChange ? '?action=change-password' : '';
+
       if (loginType === 'advisor') {
-        router.push('/dashboard');
+        router.push(`/dashboard${redirectAction}`);
       } else {
-        router.push('/student');
+        router.push(`/student${redirectAction}`);
       }
     } catch (err: any) {
       setError(err.message || 'Tài khoản hoặc mật khẩu không chính xác.');

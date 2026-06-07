@@ -31,11 +31,7 @@
 Để hệ thống khởi chạy an toàn không rò rỉ bảo mật và không gặp lỗi kết nối, phải kiểm soát cấu hình gốc thông qua file `.env`. Cần liệt kê hoặc tạo `.env.example` với các key thiết yếu:
 * `FIREBASE_SERVICE_ACCOUNT_JSON`: Nơi lưu file `serviceAccountKey.json`.
 * `FIREBASE_WEB_API_KEY`: API key cho Firebase Identity Toolkit REST login.
-* `FIREBASE_SERVICE_ACCOUNT_JSON`: Nơi lưu file `serviceAccountKey.json`.
-* `FIREBASE_WEB_API_KEY`: API key cho Firebase Identity Toolkit REST login.
 * `GEMINI_API_KEY`: API Key để kết nối mô hình Google Gemini.
-* `OLLAMA_BASE_URL`: Endpoint của Ollama local server (mặc định: `http://localhost:11434`).
-* `OLLAMA_MODEL_NAME`: Tên model local (mặc định: `llama3`).
 * `OLLAMA_BASE_URL`: Endpoint của Ollama local server (mặc định: `http://localhost:11434`).
 * `OLLAMA_MODEL_NAME`: Tên model local (mặc định: `llama3`).
 * `ENVIRONMENT`: Phân biệt môi trường (Ví dụ: `development` hoặc `production`). 
@@ -57,62 +53,63 @@
 │   │   ├── Middleware.py    (Kiểm soát điều hướng và vòng luân chuyển request)  
 │   │   └── __init__.py  
 │   ├── /features            (Tính năng nghiệp vụ)  
+│   │   ├── /academic        (Quản lý Điểm số & Thông tin SV)  
+│   │   │   ├── AcademicObserver.py  
+│   │   │   ├── AcademicService.py  (Xử lý các logic chính)  
+│   │   │   ├── GradeModels.py  (Định nghĩa cấu trúc dữ liệu hoặc các Class)  
+│   │   │   └── NotificationService.py  
+│   │   ├── /analytics       (Dashboard GVCN & Đánh giá lớp)  
+│   │   │   └── AdvisorDashboard.py  
 │   │   ├── /auth            (Tài khoản, Mật khẩu & Phân quyền)  
 │   │   │   ├── AuthService.py  
-│   │   │   └── PasswordService.py  (Xử lý đổi/quên mật khẩu)  
+│   │   │   └── PasswordService.py  (Xử lý đổi/quên mật khẩu)  
 │   │   ├── /chat            (AI Tư vấn & Tin nhắn trực tiếp)  
+│   │   │   ├── ChatOrchestrator.py  
 │   │   │   ├── ChatProcessor.py  
 │   │   │   ├── ContextManager.py  (Quản lý ngữ cảnh và lịch sử chat)  
-│   │   │   ├── ResponseAggregator.py (Tổng hợp kết quả phản hồi của AI)  
-│   │   │   └── PromptTemplates.py  
+│   │   │   ├── PromptTemplates.py  
+│   │   │   └── ResponseAggregator.py (Tổng hợp kết quả phản hồi của AI)  
 │   │   ├── /issue_manager   (Quản lý vấn đề từ SV/AI gửi tới)  
+│   │   │   ├── ChatIssueBridge.py  
 │   │   │   ├── IssueService.py  
 │   │   │   └── PriorityLogic.py (Thuật toán sắp xếp vấn đề)  
-│   │   ├── /academic        (Quản lý Điểm số & Thông tin SV)  
-│   │   │   ├── AcademicService.py  (Xử lý các logic chính)  
-│   │   │   └── GradeModels.py  (Định nghĩa cấu trúc dữ liệu hoặc các Class)  
 │   │   ├── /notifications   (Thông báo & Phản hồi từ GVCN)  
-│   │   │   ├── NotificationService.py  
-│   │   │   └── AnnouncementUI.py  
-│   │   └── /analytics       (Dashboard GVCN & Đánh giá lớp)  
-│   │       └── AdvisorDashboard.py  
+│   │   │   ├── AnnouncementUI.py  
+│   │   │   └── NotificationService.py  
+│   │   └── /user            (Quản lý người dùng)  
+│   │       └── UserService.py  
 │   ├── /api                 (FastAPI interface layer)  
 │   │   ├── deps.py  
 │   │   ├── exceptions.py  
+│   │   ├── main.py  
 │   │   └── /v1  
 │   │       ├── api.py  
 │   │       └── /endpoints  
 │   │           ├── academic.py  
 │   │           ├── auth.py  
-│   │           ├── notifications.py  
-│   │           └── chat.py  
-│   ├── /api                 (FastAPI interface layer)  
-│   │   ├── deps.py  
-│   │   ├── exceptions.py  
-│   │   └── /v1  
-│   │       ├── api.py  
-│   │       └── /endpoints  
-│   │           ├── academic.py  
-│   │           ├── auth.py  
-│   │           ├── notifications.py  
-│   │           └── chat.py  
+│   │           ├── calendar.py  
+│   │           ├── chat.py  
+│   │           ├── issues.py  
+│   │           └── notifications.py  
 │   ├── /services            (Kết nối Database/Cloud)  
 │   │   ├── __init__.py  
-│   │   ├── FirestoreHandler.py  (Lưu SV, Điểm, Tin nhắn)  
-│   │   ├── StorageHandler.py    (Lưu Ảnh minh chứng, Avatar)  
-│   │   ├── RealtimeHandler.py   (Trạng thái Chat trực tiếp)  
+│   │   ├── CalendarService.py  
+│   │   ├── DataCleanupService.py  
 │   │   ├── FirebaseAuthHandler.py (Xử lý Auth)  
-│   │   └── IssueService.py        (Xử lý nghiệp vụ vấn đề vào DB - có nguy cơ trùng lặp)  
+│   │   ├── FirestoreHandler.py  (Lưu SV, Điểm, Tin nhắn)  
+│   │   ├── IssueService.py        (Xử lý nghiệp vụ vấn đề vào DB - có nguy cơ trùng lặp)  
+│   │   ├── RealtimeHandler.py   (Trạng thái Chat trực tiếp)  
+│   │   └── StorageHandler.py    (Lưu Ảnh minh chứng, Avatar)  
 │   ├── /utils               (Tiện ích dùng chung)  
 │   │   ├── __init__.py  
-│   │   ├── DateHelpers.py      (Định dạng thời gian)  
-│   │   ├── Validators.py       (Kiểm tra dữ liệu đầu vào)  
-│   │   ├── Formatters.py       (Làm tròn điểm GPA, tóm tắt văn bản)  
 │   │   ├── AnalyticsHelpers.py  (Tính tỷ lệ chuyên cần, lọc top vấn đề cho Dashboard)  
+│   │   ├── DateHelpers.py      (Định dạng thời gian)  
 │   │   ├── FileHelpers.py       (Kiểm tra định dạng, dung lượng file minh chứng)  
-│   │   ├── StringHelpers.py     (Chuyển tiếng Việt không dấu, tách từ khóa cho AI)  
+│   │   ├── Formatters.py       (Làm tròn điểm GPA, tóm tắt văn bản)  
+│   │   ├── SearchEngine.py      (Hỗ trợ tìm kiếm sinh viên/vấn đề toàn diện)  
 │   │   ├── SecurityHelpers.py   (Tạo mật khẩu tạm thời cho sinh viên)  
-│   │   └── SearchEngine.py      (Hỗ trợ tìm kiếm sinh viên/vấn đề toàn diện)  
+│   │   ├── StringHelpers.py     (Chuyển tiếng Việt không dấu, tách từ khóa cho AI)  
+│   │   └── Validators.py       (Kiểm tra dữ liệu đầu vào)  
 │   └── main.py              (Giao diện Streamlit chính)  
 ├── /data                    (Dữ liệu lưu trữ)  
 │   ├── serviceAccountKey.json (Firebase Key)  

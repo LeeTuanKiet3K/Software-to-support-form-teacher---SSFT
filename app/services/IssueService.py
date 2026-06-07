@@ -142,16 +142,16 @@ class IssueService:
             # Xử lý đóng gói Pipeline Object (Pipeline Mapping)
             for doc in openQuery:
                 data = doc.to_dict()
-                issue_class = data.get("class_id")
-                if advisorClassId and issue_class and issue_class != advisorClassId:
+                issue_class = data.get("class_id", "")
+                if advisorClassId and issue_class != advisorClassId:
                     continue
                 data['issue_id'] = doc.id
                 pendingIssuesList.append(data)
                 
             for doc in inProgQuery:
                 data = doc.to_dict()
-                issue_class = data.get("class_id")
-                if advisorClassId and issue_class and issue_class != advisorClassId:
+                issue_class = data.get("class_id", "")
+                if advisorClassId and issue_class != advisorClassId:
                     continue
                 data['issue_id'] = doc.id
                 pendingIssuesList.append(data)

@@ -72,12 +72,15 @@ export default function StudentPage() {
 
   // Get student ID from session
   const studentId = typeof window !== 'undefined' ? sessionStorage.getItem('ssft_id') || '24120101' : '24120101';
+  const studentUid = typeof window !== 'undefined' ? sessionStorage.getItem('ssft_uid') || sessionStorage.getItem('ssft_id') || '24120101' : '24120101';
   const studentName = typeof window !== 'undefined' ? sessionStorage.getItem('ssft_name') || 'Sinh viên' : 'Sinh viên';
 
   // Notifications State
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotif, setShowNotif] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = async () => {
     try {
@@ -117,9 +120,22 @@ export default function StudentPage() {
   }, []);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('action') === 'change-password') {
+        setShowPasswordModal(true);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setShowNotif(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setShowProfileMenu(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -270,7 +286,7 @@ export default function StudentPage() {
       const res = await apiClient('/auth/change-password', {
         method: 'POST',
         body: JSON.stringify({
-          uid: studentId,
+          uid: studentUid,
           new_password: newPassword
         })
       });
@@ -376,20 +392,48 @@ export default function StudentPage() {
 
           <div className="h-6 w-px bg-white/10 hidden sm:block"></div>
 
-          <div className="flex gap-2">
-          <button
-            onClick={() => setShowPasswordModal(true)}
-            className="btn-ghost flex items-center gap-2 text-sm py-2 px-3 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10"
-          >
-            <Key className="w-4 h-4" /> Đổi MK
-          </button>
-          <button
-            onClick={() => { sessionStorage.clear(); router.push('/login'); }}
-            className="btn-ghost flex items-center gap-2 text-sm py-2 px-3 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"
-          >
-            <LogOut className="w-4 h-4" /> Đăng xuất
-          </button>
-        </div>
+          <div className="relative" ref={profileRef}>
+            <button 
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 p-[1px]">
+                <div className="w-full h-full rounded-full bg-navy-900 flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+              </div>
+            </button>
+            
+            <AnimatePresence>
+              {showProfileMenu && (
+                <motion.div
+                  className="absolute right-0 mt-2 w-48 bg-navy-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden py-1 z-50"
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="px-4 py-3 border-b border-white/5 mb-1">
+                    <p className="text-sm font-medium text-white truncate">{studentName}</p>
+                    <p className="text-xs text-slate-400">Sinh viên</p>
+                  </div>
+                  
+                  <button 
+                    onClick={() => { setShowProfileMenu(false); setShowPasswordModal(true); }}
+                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
+                  >
+                    <Key className="w-4 h-4" /> Đổi mật khẩu
+                  </button>
+                  <button 
+                    onClick={() => { setShowProfileMenu(false); sessionStorage.clear(); router.push('/login'); }}
+                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-red-400 hover:bg-red-400/10 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" /> Đăng xuất
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </motion.header>
 
