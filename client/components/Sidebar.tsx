@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -25,6 +26,15 @@ const advisorNav = [
 export function Sidebar({ userName, userEmail, role = 'advisor', unreadCount = 0 }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const [displayName, setDisplayName] = useState(userName || 'GVCN');
+  const [displayEmail, setDisplayEmail] = useState(userEmail || '');
+
+  useEffect(() => {
+    const storedName = sessionStorage.getItem('ssft_name');
+    const storedEmail = sessionStorage.getItem('ssft_email');
+    setDisplayName(storedName || userName || 'GVCN');
+    setDisplayEmail(storedEmail || userEmail || '');
+  }, [userName, userEmail]);
 
   const handleLogout = () => {
     sessionStorage.clear();
@@ -90,14 +100,14 @@ export function Sidebar({ userName, userEmail, role = 'advisor', unreadCount = 0
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500/40 to-blue-500/40
                           border border-purple-500/20 flex items-center justify-center shrink-0">
             <span className="text-xs font-bold text-purple-300">
-              {(userName ?? userEmail ?? 'U')[0].toUpperCase()}
+              {(displayName || displayEmail || 'U')[0].toUpperCase()}
             </span>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-slate-200 text-xs font-medium truncate">
-              {userName || 'GVCN'}
+              {displayName || 'GVCN'}
             </p>
-            <p className="text-slate-500 text-xs truncate">{userEmail}</p>
+            <p className="text-slate-500 text-xs truncate">{displayEmail}</p>
           </div>
         </div>
 

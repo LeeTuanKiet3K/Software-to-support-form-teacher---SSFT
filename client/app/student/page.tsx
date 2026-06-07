@@ -70,10 +70,33 @@ export default function StudentPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Get student ID from session
-  const studentId = typeof window !== 'undefined' ? sessionStorage.getItem('ssft_id') || '24120101' : '24120101';
-  const studentUid = typeof window !== 'undefined' ? sessionStorage.getItem('ssft_uid') || sessionStorage.getItem('ssft_id') || '24120101' : '24120101';
-  const studentName = typeof window !== 'undefined' ? sessionStorage.getItem('ssft_name') || 'Sinh viên' : 'Sinh viên';
+  // Auth/session state
+  const [studentId, setStudentId] = useState('');
+  const [studentUid, setStudentUid] = useState('');
+  const [studentName, setStudentName] = useState('Sinh viên');
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+  useEffect(() => {
+    const role = sessionStorage.getItem('ssft_role');
+    const id = sessionStorage.getItem('ssft_id');
+    const uid = sessionStorage.getItem('ssft_uid');
+    const name = sessionStorage.getItem('ssft_name');
+
+    if (!id || !role) {
+      router.replace('/login');
+      return;
+    }
+
+    if (role !== 'student') {
+      router.replace(role === 'advisor' ? '/dashboard' : '/login');
+      return;
+    }
+
+    setStudentId(id);
+    setStudentUid(uid || id);
+    setStudentName(name || 'Sinh viên');
+    setIsCheckingSession(false);
+  }, [router]);
 
   // Notifications State
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -114,10 +137,11 @@ export default function StudentPage() {
   };
 
   useEffect(() => {
+    if (isCheckingSession || !studentId) return;
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isCheckingSession, studentId]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -143,12 +167,14 @@ export default function StudentPage() {
   }, []);
 
   useEffect(() => {
+    if (isCheckingSession) return;
     if (activeTab === 'ai') {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isTyping, activeTab]);
+  }, [messages, isTyping, activeTab, isCheckingSession]);
 
   useEffect(() => {
+    if (isCheckingSession || !studentId) return;
     if (activeTab === 'grades' && !grades) {
       fetchGrades();
     }
@@ -162,7 +188,7 @@ export default function StudentPage() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [activeTab]);
+  }, [activeTab, isCheckingSession, studentId]);
 
   const fetchMyIssues = async () => {
     setIssuesLoading(true);
@@ -302,6 +328,14 @@ export default function StudentPage() {
       setPasswordLoading(false);
     }
   };
+
+  if (isCheckingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-navy-950 text-slate-400">
+        Đang kiểm tra phiên đăng nhập...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col max-w-4xl mx-auto px-4 bg-navy-950">

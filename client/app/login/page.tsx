@@ -47,7 +47,9 @@ export default function LoginPage() {
         })
       });
 
-      sessionStorage.setItem('ssft_role', loginType);
+      const actualRole = response.profile?.role || loginType;
+      sessionStorage.setItem('ssft_role', actualRole);
+      sessionStorage.setItem('ssft_email', loginEmail);
 
       if (response.profile) {
         sessionStorage.setItem('ssft_uid', response.profile.id);
@@ -66,10 +68,12 @@ export default function LoginPage() {
       const requiresPasswordChange = response.profile?.requires_password_change;
       const redirectAction = requiresPasswordChange ? '?action=change-password' : '';
 
-      if (loginType === 'advisor') {
+      if (actualRole === 'advisor' || actualRole === 'admin') {
         router.push(`/dashboard${redirectAction}`);
-      } else {
+      } else if (actualRole === 'student') {
         router.push(`/student${redirectAction}`);
+      } else {
+        router.push('/login');
       }
     } catch (err: any) {
       setError(err.message || 'Tài khoản hoặc mật khẩu không chính xác.');
