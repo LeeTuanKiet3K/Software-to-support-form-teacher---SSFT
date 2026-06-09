@@ -32,6 +32,7 @@ class ChatMessageResponse(BaseModel):
     priority_level: Optional[str] = None
     category: Optional[str] = None
     is_fallback: bool = False
+    image_urls: List[str] = Field(default_factory=list)
 
 # Schema cho History & Summary giữ nguyên
 class ChatHistoryItem(BaseModel):
@@ -84,8 +85,8 @@ async def student_chat(
         priority_level=result.get("priority_level"),
         category=result.get("category"),
         is_fallback=result.get("is_fallback", False),
+        image_urls=result.get("image_urls", []),
     )
-
 
 @router.post("/advisor", status_code=201)
 async def advisor_chat(payload: AdvisorChatRequest):

@@ -13,6 +13,7 @@ type ChatMessage = {
   content: string;
   timestamp: string;
   actions?: string[];
+  imageUrls?: string[];
 };
 
 type TabType = 'ai' | 'form' | 'grades' | 'my-issues';
@@ -234,11 +235,14 @@ export default function StudentPage() {
           student_id: studentId
         }),
       });
+      console.log('=== FULL RESPONSE ===', response);        // thêm dòng này
+      console.log('=== IMAGE URLS ===', response.image_urls); // thêm dòng này
 
       setMessages((prev) => [...prev, {
         role: 'assistant',
         content: response.content || response.answer,
         actions: response.quick_actions || response.actions,
+        imageUrls: (response.image_urls ?? []).filter((url: string) => url.toLowerCase().endsWith('.png')),
         timestamp: new Date().toISOString()
       }]);
     } catch (error) {
@@ -547,6 +551,21 @@ export default function StudentPage() {
                         ${msg.role === 'user' ? 'bubble-user' : 'bubble-ai'}`}>
                         {msg.content}
                       </div>
+                      {/* Image Attachments */}
+                      {msg.imageUrls && msg.imageUrls.length > 0 && (
+                        <div className="flex flex-col gap-2">
+                          {msg.imageUrls.map((url, i) => (
+                            <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                              <img
+                                src={url}
+                                alt={`Thông tin bổ sung: ${i + 1}`}
+                                className="max-w-xs rounded-xl border border-white/10 hover:opacity-90 transition-opacity cursor-pointer"
+                                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      )}
                       {msg.actions && msg.actions.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
                           {msg.actions.map((action, i) => (
