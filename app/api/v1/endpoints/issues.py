@@ -5,25 +5,14 @@ from pydantic import BaseModel, Field
 
 from app.api.deps import get_issue_service
 from app.services.IssueService import IssueService
+from datetime import datetime, timezone
 
 router = APIRouter()
 
 
 # ---------------------------------------------------------
 # Pydantic Schemas
-# -------------------------------------from typing import Any, Dict, List, Optional
-
-from fastapi import APIRouter, Depends, HTTPException, Path
-from pydantic import BaseModel, Field
-
-from app.api.deps import get_issue_service
-from app.services.IssueService import IssueService
-
-router = APIRouter()
-
-
-
-
+# ---------------------------------------------------------
 # ---------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------
@@ -37,23 +26,76 @@ async def get_dashboard_summary(
 ):
     """Trả về dữ liệu KPI tổng quan cho Dashboard GVCN"""
     
-    # Kéo danh sách issue từ DB
+    # Kéo toàn bộ danh sách issue từ DB
     try:
-        raw_issues = issue_service.getPendingIssues(advisorClassId=class_id)
+        raw_issues = issue_service.getAllIssues(advisorClassId=class_id)
     except Exception:
         raw_issues = []
 
-    # Mock Data cho thống kê KPI
-    stats = {
-        "urgent": sum(1 for i in raw_issues if i.get("priority") == "URGENT"),
-        "pending": len(raw_issues),
-        "resolved": 12, # Demo số đã giải quyết trong tháng
-        "totalStudents": 45
+    urgent_count = 0
+    pending_count = 0
+    resolved_count = 0
+    
+    intent_counts = {
+        "tam_ly": 0,
+        "khieu_nai": 0,
+        "hoi_dap": 0,
+        "khac": 0
     }
     
-    # Format danh sách để Frontend render bảng
+    now = datetime.now(timezone.utc)
+    weekly_stats = [
+        {"week": "Tuần 4 (Hiện tại)", "urgent": 0, "high": 0, "medium": 0, "low": 0},
+        {"week": "Tuần 3", "urgent": 0, "high": 0, "medium": 0, "low": 0},
+        {"week": "Tuần 2", "urgent": 0, "high": 0, "medium": 0, "low": 0},
+        {"week": "Tuần 1", "urgent": 0, "high": 0, "medium": 0, "low": 0},
+    ]
+
     formatted_issues = []
+    
     for issue in raw_issues:
+        status = issue.get("status")
+        priority = issue.get("priority", "LOW")
+        intent = issue.get("intent", "khac")
+        created_at = issue.get("created_at")
+        
+        # Calculate stats
+        if priority == "URGENT":
+            urgent_count += 1
+            
+        if status == "RESOLVED":
+            resolved_count += 1
+        else:
+            pending_count += 1
+            
+        # Calculate intent pie chart
+        if intent in intent_counts:
+            intent_counts[intent] += 1
+        else:
+            intent_counts["khac"] += 1
+            
+        # Calculate bar chart (weekly)
+        dt = now
+        if hasattr(created_at, "timestamp"):
+            dt = datetime.fromtimestamp(created_at.timestamp(), tz=timezone.utc)
+        elif isinstance(created_at, datetime):
+            dt = created_at
+            
+        delta_days = (now - dt).days
+        if delta_days <= 7:
+            week_idx = 0
+        elif delta_days <= 14:
+            week_idx = 1
+        elif delta_days <= 21:
+            week_idx = 2
+        else:
+            week_idx = 3
+            
+        priority_key = priority.lower() if priority else "low"
+        if priority_key in ["urgent", "high", "medium", "low"]:
+            weekly_stats[week_idx][priority_key] += 1
+
+        # Format issue if not resolved for frontend table (or include all and let frontend filter)
         formatted_issues.append({
             "id": issue.get("issue_id", ""),
             "issue_id": issue.get("issue_id", ""),
@@ -73,9 +115,42 @@ async def get_dashboard_summary(
             "content": issue.get("content")
         })
 
+    # Sort weekly stats to be chronological (Tuần 1 -> Tuần 4)
+    bar_data = list(reversed(weekly_stats))
+    
+    pie_data = [
+        {"name": "Tâm lý", "value": intent_counts["tam_ly"], "color": "#ef4444"},
+        {"name": "Khiếu nại", "value": intent_counts["khieu_nai"], "color": "#f59e0b"},
+        {"name": "Hỏi đáp", "value": intent_counts["hoi_dap"], "color": "#3b82f6"},
+        {"name": "Khác", "value": intent_counts["khac"], "color": "#94a3b8"},
+    ]
+
+    filters = [("role", "==", "student")]
+    if class_id:
+        filters.append(("class_id", "==", class_id))
+        
+    try:
+        students = issue_service.m_dbHandler.queryDocuments("Users", filters=filters, limitCount=1000)
+        total_students = len(students)
+    except Exception:
+        total_students = 0
+
+    stats = {
+        "urgent": urgent_count,
+        "pending": pending_count,
+        "resolved": resolved_count,
+        "totalStudents": total_students
+    }
+
+    # Sort formatted issues by priority (similar to getPendingIssues)
+    priority_weights = {"URGENT": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
+    formatted_issues.sort(key=lambda x: priority_weights.get(x["priority"], 99))
+
     return {
         "stats": stats,
-        "issues": formatted_issues
+        "issues": formatted_issues,
+        "pieData": pie_data,
+        "barData": bar_data
     }
 
 

@@ -31,13 +31,15 @@ export default function StudentsPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const classId = "24CTT4";
+  const [classId, setClassId] = useState<string>('');
 
   useEffect(() => {
     const fetchStudents = async () => {
       try {
+        const currentClassId = sessionStorage.getItem('ssft_class_id') || '24CTT4';
+        setClassId(currentClassId);
         setIsLoading(true);
-        const data = await apiClient('/academic/class/24CTT4/students');
+        const data = await apiClient(`/academic/class/${currentClassId}/students`);
         const studentData = data || [];
         setStudents(studentData);
 

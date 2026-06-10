@@ -1,42 +1,55 @@
-# SSFT Frontend
+# SSFT Frontend (Client)
 
-Giao diện Next.js 14 cho hệ thống **Phần mềm hỗ trợ Giáo viên chủ nhiệm (SSFT)**.
+Đây là giao diện người dùng được xây dựng bằng **Next.js 14** (App Router) cho hệ thống **Phần mềm hỗ trợ Giáo viên chủ nhiệm (SSFT)**.
 
-## Cài đặt & Chạy
+## Yêu cầu Hệ thống
+- **Node.js**: Phiên bản 18.17.0 trở lên (Khuyến nghị dùng bản LTS mới nhất).
+- **Trình duyệt**: Chrome, Firefox, Edge, Safari phiên bản mới.
+- **Backend**: Đảm bảo Backend (FastAPI) đang chạy ở cổng `8000` (mặc định) để có thể đăng nhập và lấy dữ liệu thật từ hệ thống.
 
-### 1. Cài Node.js (nếu chưa có)
-Tải tại: https://nodejs.org → chọn phiên bản LTS
+## Cài đặt & Chạy ứng dụng
 
-### 2. Cài dependencies
+### 1. Cài đặt các thư viện (Dependencies)
+Mở terminal và di chuyển vào thư mục `client`, sau đó chạy:
 ```bash
-cd frontend
+cd client
 npm install
 ```
 
-### 3. Chạy dev server
+### 2. Khởi chạy môi trường phát triển (Dev server)
 ```bash
 npm run dev
 ```
 
-Mở trình duyệt: http://localhost:3000
+Sau khi Terminal báo thành công, hãy mở trình duyệt và truy cập: [http://localhost:3000](http://localhost:3000)
 
-## Tài khoản test (Mock)
+## Hướng dẫn Đăng nhập
+Hệ thống hiện tại đã kết nối trực tiếp với **Firebase Authentication** thông qua Backend thật, không còn dùng dữ liệu giả (Mock data) nữa.
 
-| Loại | Email | Mật khẩu |
-|------|-------|----------|
-| GVCN (Dashboard) | `gvcn@test.com` | bất kỳ |
-| Sinh viên (Chat) | `student@test.com` | bất kỳ |
+- **Sinh viên / GVCN**: Sử dụng tài khoản đã được cấp hoặc tạo mới từ trang Quản trị để đăng nhập.
+- **Trang Quản trị (Admin)**: Bạn có thể truy cập `http://localhost:3000/admin` để khởi tạo hàng loạt tài khoản cho Giáo viên và Sinh viên vào cơ sở dữ liệu. 
+- **Phân quyền tự động**: Khi đăng nhập thành công, hệ thống sẽ tự động nhận diện Role (Vai trò) và điều hướng về trang tương ứng:
+  - Tài khoản sinh viên → Chuyển tới giao diện Tư vấn AI (`/student`).
+  - Tài khoản GVCN → Chuyển tới Dashboard theo dõi lớp (`/dashboard`).
 
-> **Lưu ý**: Email chứa "gv", "gvcn", "advisor" → vào Dashboard GVCN. Còn lại → Chat sinh viên.
-
-## Cấu trúc
-```
-frontend/
+## Cấu trúc thư mục cốt lõi
+```text
+client/
 ├── app/
-│   ├── login/     ← Trang đăng nhập
-│   ├── dashboard/ ← Dashboard GVCN
-│   └── student/   ← Chat AI sinh viên
-├── components/    ← UI components
-├── lib/mockData.ts
-└── types/index.ts
+│   ├── admin/       ← Trang khởi tạo tài khoản (Admin)
+│   ├── login/       ← Trang đăng nhập chung
+│   ├── dashboard/   ← Dashboard toàn diện cho GVCN (Quản lý, Thống kê, Lịch hẹn)
+│   ├── student/     ← Giao diện cho sinh viên (Chat AI, Xem điểm)
+│   ├── globals.css  ← Cấu hình Tailwind CSS & hiệu ứng
+│   └── layout.tsx   ← Bố cục (Root Layout) của Next.js
+├── components/      ← Chứa các Component dùng chung (UI components, Biểu đồ, Chat...)
+├── lib/             ← Tiện ích và cấu hình kết nối (Gọi API, Các hằng số hiển thị)
+└── types/           ← Khai báo các Interface/Kiểu dữ liệu (TypeScript)
+```
+
+## Đóng gói (Build) cho Production
+Để kiểm tra lỗi hoặc chạy trên môi trường thực tế, hãy dùng lệnh:
+```bash
+npm run build
+npm start
 ```

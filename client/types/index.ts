@@ -27,6 +27,7 @@ export type IssueSentiment = 'tich_cuc' | 'tieu_cuc' | 'trung_lap';
 
 export interface Issue {
   id: string;
+  issue_id?: string;
   student_id: string;       // Tên hoặc UID sinh viên
   chat_id?: string;
   intent: IssueIntent;
