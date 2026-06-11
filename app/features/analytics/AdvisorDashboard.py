@@ -1,4 +1,3 @@
-import streamlit as st
 from typing import List, Dict, Any
 from datetime import datetime, timezone
 
@@ -131,58 +130,3 @@ class AdvisorDashboardService:
             return []
 
 
-def renderAdvisorDashboard() -> None:
-    """
-    Giao diện (UI) mẫu cho Dashboard của GVCN (Streamlit Component).
-    Được import và gọi tại app/main.py.
-    """
-    st.title("Hộp thư Quản lý Sinh viên")
-    st.markdown("---")
-    
-    dashboardService = AdvisorDashboardService()
-    
-    with st.spinner("Đang tải dữ liệu vấn đề..."):
-        issues = dashboardService.getPendingIssues()
-    
-    if not issues:
-        st.success("Tuyệt vời! Hiện không có vấn đề nào cần xử lý.")
-        return
-        
-    st.markdown(f"**Bạn có {len(issues)} vấn đề đang chờ giải quyết.**")
-    
-    for issue in issues:
-        priority = issue.get("priority", "LOW")
-        
-        # UI: Màu sắc theo độ khẩn cấp
-        color = "🟢"
-        if priority in ["URGENT", "P0", "HIGH", "P1"]:
-            color = "🔴"
-        elif priority in ["MEDIUM", "P2"]:
-            color = "🟡"
-            
-        card_title = f"{color} [{priority}] {issue.get('category', 'Chung')} - SV: {issue.get('student_id', 'Ẩn danh')}"
-        
-        with st.expander(card_title):
-            st.markdown("### Nội dung phản ánh:")
-            st.info(issue.get("content", "Không có nội dung chi tiết."))
-            
-            st.markdown(f"**Trạng thái hiện tại:** `{issue.get('status')}`")
-            
-            # Khung nhập phản hồi
-            reply_text = st.text_area(f"Nhập lời khuyên / phản hồi của bạn:", key=f"reply_{issue.get('id')}", height=100)
-            
-            if st.button("Gửi Phản Hồi & Đóng", key=f"btn_{issue.get('id')}", type="primary"):
-                if not reply_text.strip():
-                    st.warning("Vui lòng nhập nội dung trước khi gửi.")
-                else:
-                    success = dashboardService.replyToIssue(
-                        issueId=issue.get('id'),
-                        studentId=issue.get('student_id'),
-                        replyContent=reply_text
-                    )
-                    
-                    if success:
-                        st.success("Đã phản hồi thành công! Sinh viên sẽ nhận được thông báo.")
-                        st.rerun()
-                    else:
-                        st.error("Lỗi hệ thống khi gửi phản hồi. Vui lòng thử lại sau.")

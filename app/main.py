@@ -3,7 +3,6 @@ import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
 from app.api.v1.api import api_router
 from app.api.exceptions import firebase_exception_handler, FirebaseError
 from app.services.DataCleanupService import start_periodic_cleanup_task

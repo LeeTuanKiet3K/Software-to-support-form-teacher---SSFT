@@ -1,5 +1,4 @@
 from typing import Dict, Any, Union, Optional
-import streamlit as st
 from app.services.FirebaseAuthHandler import FirebaseAuthHandler
 from app.services.FirestoreHandler import FirestoreHandler
 from app.utils.SecurityHelpers import generateTempPassword
@@ -159,25 +158,19 @@ class AuthService:
     def logout(self, uid: Optional[str] = None) -> bool:
         """
         Điều phối đăng xuất người dùng (User logout flow).
-        Gọi signOutUser từ tầng hạ tầng và xóa sạch dữ liệu bộ nhớ tạm.
+        Gọi signOutUser từ tầng hạ tầng.
         
         Args:
             uid (Optional[str]): Mã người dùng.
             
         Returns:
-            bool: True báo hiệu thành công để giao diện chuyển hướng (Redirect).
+            bool: True báo hiệu thành công.
         """
         try:
             # Session Termination - Chấm dứt phiên làm việc thông qua Auth Handler
             self.m_authHandler.signOutUser(uid)
-            
-            # Clear user session data - Xóa sạch bộ nhớ tạm của Streamlit
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
-                
             return True
         except Exception as e:
             print(f"Lỗi điều phối đăng xuất: {e}")
-            # Trong trường hợp có lỗi ở session_state, vẫn ưu tiên Redirect
-            return True
+            return False
 
