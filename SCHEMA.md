@@ -101,9 +101,11 @@
 * **Fields**:
     * `student_id`: string (UID sinh viên).
     * `class_id`: string (Mã lớp).
-    * `subjects`: array (Danh sách môn học và điểm số).
+    * `subjects`: array (Danh sách môn học).
     * `gpa`: double (Điểm trung bình học kỳ/năm).
-    * `updated_at`: timestamp (Thời gian cập nhật).
+    * `isLowScore` : boolean (Trạng thái học lực yếu).
+    * `aiCheckSent` : boolean (Đã được AI hỏi thăm hay chưa).
+    * `studentResponded` : boolean (Sinh viên đã phản hồi hay chưa).
 
 ---
 

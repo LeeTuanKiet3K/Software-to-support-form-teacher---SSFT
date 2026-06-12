@@ -1,7 +1,6 @@
 import json
 import time
 import requests
-import google.generativeai as genai
 from groq import Groq
 from typing import Dict, Any
 
@@ -17,7 +16,7 @@ class Middleware:
     """
     Bộ điều phối quy trình hợp nhất AI (AI Orchestrator / Middleware Layer).
     Điều phối luồng dữ liệu theo kiến trúc Hybrid Logic: Client (SV) -> Llama 3 (Phân tích) -> 
-    SearchEngine (Tra cứu tri thức) -> Gemini (Suy luận & Hội thoại vòng ngoài).
+    SearchEngine (Tra cứu tri thức) -> Groq (Suy luận & Hội thoại vòng ngoài).
     """
 
     def __init__(self) -> None:
@@ -25,7 +24,7 @@ class Middleware:
         self.m_ollamaUrl = AppConfig.OLLAMA_BASE_URL
         self.m_ollamaModel = AppConfig.OLLAMA_MODEL_NAME
 
-        # Cấu hình cho Cloud Inference LLM (Groq) — thay thế Gemini
+        # Cấu hình cho Cloud Inference LLM (Groq)
         self.m_groqKey = AppConfig.GROQ_API_KEY
         if self.m_groqKey:
             # Khởi tạo Groq client (Service Binding)
@@ -78,9 +77,9 @@ class Middleware:
             print(f"Đứt gãy kết nối với Local LLM (Local Inference Broken): {systemErr}")
             return {"intent": "khong_ro", "sentiment": "trung_lap"}
 
-    def callCloudGemini(self, prompt: str, context: str) -> str:
+    def callCloudGroq(self, prompt: str, context: str) -> str:
         """
-        Truy vấn trực tuyến qua Cloud Gemini để tạo dạng ngôn từ (Response Generation) 
+        Truy vấn trực tuyến qua Cloud Groq để tạo dạng ngôn từ (Response Generation)
         dựa trên dữ liệu tài nguyên sẵn có (Context Grounding).
         
         Args:
@@ -90,7 +89,7 @@ class Middleware:
         Returns:
             str: Đáp án đã lập luận đầy đủ.
         """
-        if not hasattr(self, 'm_geminiModel'):
+        if not hasattr(self, 'm_groqClient'):
             return "Hệ thống AI nền tảng chưa được cấu hình. (Cloud Service Absent)"
             
         # Kiến trúc Prompt theo kiểu Zero-Shot có tri thức (Prompt Engineering)
@@ -102,29 +101,30 @@ class Middleware:
         
         try:
             startTick = time.time()
-            response = self.m_geminiModel.generate_content(instructedPrompt)
+            # Gọi Groq Chat Completions API (Cloud Inference)
+            response = self.m_groqClient.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[{"role": "user", "content": instructedPrompt}],
+                max_tokens=1024,
+            )
             elapsedSecs = time.time() - startTick
             
-            # Module đánh giá an ninh nội dung (Safety Metrics Check)
-            if response.prompt_feedback and response.prompt_feedback.block_reason:
-                return "Phản hồi đã bị ngắt do phát hiện nội dung có nguy cơ vi phạm (Content Safety Enforcement)."
-                
-            finalAnswer = response.text
+            finalAnswer = response.choices[0].message.content
             
             # Điểm tính toán token sơ lược (Token Approximation)
             estimatedTokens = len(instructedPrompt.split()) + len(finalAnswer.split())
             
-            self.m_logAiUsage("gemini_cloud", elapsedSecs, instructedPrompt, finalAnswer, estimatedTokens)
+            self.m_logAiUsage("groq_cloud", elapsedSecs, instructedPrompt, finalAnswer, estimatedTokens)
             
             return finalAnswer
         except Exception as systemErr:
-            print(f"Cloud Server từ chối phản hồi (Gemini Instance Offline): {systemErr}")
+            print(f"Cloud Server từ chối phản hồi (Groq Instance Offline): {systemErr}")
             return "Rất tiếc bộ khuếch đại AI đang bảo trì. Vui lòng thử gọi lại tôi sau vài phút."
 
     def coordinateFlow(self, studentMessage: str, chatId: str = "default_session") -> str:
         """
         Hệ điều phối vòng đời tin nhắn (Pipeline Orchestrator Layer).
-        Kích hoạt Hybrid Logic: Tin nhắn -> Llama 3 -> SearchEngine -> Gemini -> Formatted Response.
+        Kích hoạt Hybrid Logic: Tin nhắn -> Llama 3 -> SearchEngine -> Groq -> Formatted Response.
         
         Args:
             studentMessage (str): Thông điệp từ bảng UI mà sinh viên gửi.
@@ -155,11 +155,11 @@ class Middleware:
         
         combinedMemory = f"Lịch sử tương tác ngắn:\n{historyText}\n\nKiến thức chuẩn lưu trữ:\n{ragContext}"
         
-        # [Step 4: Central Cloud Computing] Kêu gọi Gemini phác thảo kiến tạo ngôn ngữ cuối cùng
-        rawGeminiReply = self.callCloudGemini(cleanedQuery, combinedMemory)
+        # [Step 4: Central Cloud Computing] Kêu gọi Groq phác thảo kiến tạo ngôn ngữ cuối cùng
+        rawGroqReply = self.callCloudGroq(cleanedQuery, combinedMemory)
         
         # [Step 5: Output Polish] Đánh bóng văn bản tương tác UI
-        finalResponse = StringHelpers.formatResponse(rawGeminiReply)
+        finalResponse = StringHelpers.formatResponse(rawGroqReply)
         
         # Cất thư trả lời của thiết bị vào bộ chứa (Memory State Saving)
         self.m_contextManager.addMessage(chatId, "assistant", finalResponse)

@@ -55,7 +55,7 @@ class SearchEngine:
     def findRelevantContext(self, query: str, topN: int = 3) -> List[Dict[str, Any]]:
         """
         Tìm kiếm ngữ cảnh tương đồng nhất từ KnowledgeBase (Context Retrieval).
-        Sẽ cung cấp kiến thức nền (Grounding input) cho Gemini.
+        Sẽ cung cấp kiến thức nền (Grounding input) cho Groq.
         
         Args:
             query (str): Xâu truy vấn hoặc câu hỏi của sinh viên.

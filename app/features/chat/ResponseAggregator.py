@@ -18,11 +18,11 @@ class ResponseAggregator:
 
     def formatFinalResponse(self, aiResponse: str, metadata: Dict[str, Any] = None) -> str:
         """
-        Ghép câu trả lời từ Gemini với các thông tin bổ trợ thành chuỗi hiển thị cuối cùng
+        Ghép câu trả lời từ AI (Groq) với các thông tin bổ trợ thành chuỗi hiển thị cuối cùng
         Biến câu trả lời thuần thành UI có định hướng hành động.
 
         Args:
-            aiResponse (str): Câu trả lời thô từ Gemini.
+            aiResponse (str): Câu trả lời thô từ AI (Groq).
             metadata (Dict): Dữ liệu bổ trợ — references, advisor_contact, v.v..
 
         Returns:
@@ -65,7 +65,7 @@ class ResponseAggregator:
     def createSummaryForAdvisor(self, chatId: str) -> Dict[str, str]:
         secretSummary = self.m_contextManager.summarizeOldContext(chatId)
 
-        # Fallback thủ công khi Gemini chưa kích hoạt tóm tắt
+        # Fallback thủ công khi AI (Groq) chưa kích hoạt tóm tắt
         if not secretSummary:
             recentHistory = self.m_contextManager.getChatContext(chatId, limit=2)
             if recentHistory:

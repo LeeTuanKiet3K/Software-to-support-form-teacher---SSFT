@@ -19,7 +19,7 @@ def get_issue_service():
 
 
 def get_middleware():
-    """Dependency cung cấp Middleware instance (AI pipeline Llama + Gemini)."""
+    """Dependency cung cấp Middleware instance (AI pipeline Llama + Groq)."""
     from app.core.Middleware import Middleware
     return Middleware()
 

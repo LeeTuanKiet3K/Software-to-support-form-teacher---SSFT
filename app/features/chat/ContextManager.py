@@ -72,12 +72,12 @@ class ContextManager:
 
     def summarizeOldContext(self, chatId: str) -> str:
         """
-        Dùng Gemini tóm tắt các tin nhắn cũ khi lịch sử hội thoại quá dài
+        Dùng Groq tóm tắt các tin nhắn cũ khi lịch sử hội thoại quá dài
         Mục tiêu: nén lịch sử thành 1-2 câu để tiết kiệm token ở các lượt gọi tiếp theo.
 
         Chiến lược:
             - Giữ nguyên 4 tin nhắn gần nhất
-            - Tóm tắt tất cả tin nhắn cũ hơn bằng Gemini
+            - Tóm tắt tất cả tin nhắn cũ hơn bằng Groq
 
         Args:
             chatId (str): ID phiên hội thoại cần tóm tắt .
