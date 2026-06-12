@@ -10,7 +10,6 @@ firebase-admin>=6.4.0
 python-dotenv>=1.0.1
 
 # --- AI & Natural Language Processing (AI & Xử lý ngôn ngữ tự nhiên) ---
-google-generativeai>=0.4.1
 groq>=0.4.2
 # Thay thế textblob bằng rapidfuzz để tìm kiếm từ khóa chính xác và nhanh hơn
 rapidfuzz>=3.6.2

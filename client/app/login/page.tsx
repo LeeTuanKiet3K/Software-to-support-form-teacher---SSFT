@@ -312,7 +312,7 @@ export default function LoginPage() {
                     <div className="bg-purple-500/10 border border-purple-500/20 p-4 rounded-xl">
                       <p className="text-purple-300 font-medium mb-2">Điểm nổi bật của Trợ lý AI:</p>
                       <ul className="list-disc list-inside space-y-2 text-purple-200/80">
-                        <li><strong>Đa mô hình (Multi-model):</strong> Kết hợp sức mạnh suy luận logic của <span className="text-purple-300">Gemini</span> và khả năng xử lý ngôn ngữ mượt mà của <span className="text-purple-300">Llama 3</span>.</li>
+                        <li><strong>Đa mô hình (Multi-model):</strong> Kết hợp sức mạnh suy luận logic của <span className="text-purple-300">Groq</span> và khả năng xử lý ngôn ngữ mượt mà của <span className="text-purple-300">Llama 3</span>.</li>
                         <li><strong>Đọc vị Cảm xúc (Sentiment Analysis):</strong> Tự động nhận diện mức độ căng thẳng qua từng câu chat để phát hiện sớm các khủng hoảng tâm lý của sinh viên.</li>
                         <li><strong>Trợ lý Quyết định (Decision Support):</strong> Tự động tổng hợp điểm số, đánh giá chuyên cần và tự động phác thảo cảnh báo học vụ cho Giáo viên.</li>
                       </ul>
