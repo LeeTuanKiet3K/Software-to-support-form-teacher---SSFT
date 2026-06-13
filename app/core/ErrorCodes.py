@@ -1,7 +1,5 @@
+# Chuyển đổi mã lỗi Firebase/Firestore sang thông báo tiếng Việt.
 def getErrorMessage(errorCode: str) -> str:
-    """
-    Chuyển đổi mã lỗi Firebase/Firestore sang thông báo tiếng Việt thân thiện.
-    """
     m_errorMap = {
         "auth/user-not-found": "Không tìm thấy người dùng.",
         "auth/wrong-password": "Sai mật khẩu.",

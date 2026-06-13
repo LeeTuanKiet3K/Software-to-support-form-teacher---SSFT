@@ -5,27 +5,14 @@ from app.utils.SecurityHelpers import generateTempPassword
 from app.core.ErrorCodes import getErrorMessage
 from app.core.Constants import UserRole
 
+# Lớp dịch vụ xác thực (Authentication Service).
 class AuthService:
-    """
-    Lớp dịch vụ xác thực (Authentication Service).
-    Quá trình đăng nhập và tạo người dùng bởi quản trị viên.
-    """
-
     def __init__(self) -> None:
         self.m_authHandler = FirebaseAuthHandler()
         self.m_dbHandler = FirestoreHandler()
 
+    # Xác thực người dùng (User login).
     def loginUser(self, email: str, password: str) -> Dict[str, Any]:
-        """
-        Xác thực người dùng (User login).
-        
-        Args:
-            email (str): Địa chỉ email.
-            password (str): Mật khẩu.
-            
-        Returns:
-            Dict[str, Any]: Thông tin user nếu thành công, ngược lại trả về lỗi từ ErrorCodes.
-        """
         try:
             # User authentication - Xác thực người dùng
             authResponse = self.m_authHandler.signInWithEmail(email, password)

@@ -39,7 +39,7 @@ class AcademicSaveResponse(BaseModel):
 
 
 # ---------------------------------------------------------
-# Endpoints Cũ (Cá nhân)
+# Endpoints dành cho Sinh viên (Student-facing API)
 # ---------------------------------------------------------
 @router.get("/grades/{student_id}", response_model=AcademicRecordResponse)
 async def get_student_grades(
@@ -100,7 +100,7 @@ async def add_or_update_student_grades(
 
 
 # ---------------------------------------------------------
-# CÁC ENDPOINT MỚI (Đồng bộ với Frontend Dashboard)
+# Endpoints dành cho Giáo viên chủ nhiệm (Advisor-facing API)
 # ---------------------------------------------------------
 @router.get("/class/{class_id}/grades")
 async def get_class_grades(

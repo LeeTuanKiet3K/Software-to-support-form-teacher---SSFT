@@ -70,15 +70,8 @@ class NotificationService:
             }
         )
 
+    # Gửi cảnh báo học vụ đến GVCN.
     def sendAcademicAlert(self, studentId: str, alerts: List[str]) -> None:
-        """
-        Gửi cảnh báo học vụ đến GVCN.
-
-        Args:
-            studentId (str): ID sinh viên.
-            alerts (List[str]): Danh sách cảnh báo.
-        """
-
         # Lấy thông tin sinh viên
         student: Dict[str, Any] = self.m_dbHandler.getDocument(
             collection="Users",
@@ -133,10 +126,8 @@ class NotificationService:
             }
         )
 
+    # Gửi thông báo phản hồi của GVCN tới sinh viên.
     def sendAdvisorReplyNotification(self, studentId: str, replyContent: str) -> None:
-        """
-        Gửi thông báo phản hồi của GVCN tới sinh viên.
-        """
         # Notification cho sinh viên
         self.m_dbHandler.addDocument(
             collection="Notifications",
@@ -162,19 +153,8 @@ class NotificationService:
             }
         )
 
+    # Gửi thông báo chung cho toàn bộ sinh viên trong một lớp.
     def sendClassAnnouncement(self, advisorId: str, classId: str, title: str, content: str) -> int:
-        """
-        Gửi thông báo chung cho toàn bộ sinh viên trong một lớp.
-        
-        Args:
-            advisorId (str): ID của GVCN thực hiện gửi.
-            classId (str): Mã lớp nhận thông báo.
-            title (str): Tiêu đề thông báo.
-            content (str): Nội dung thông báo.
-            
-        Returns:
-            int: Số lượng sinh viên đã nhận được thông báo.
-        """
         # 1. Lấy danh sách sinh viên thuộc lớp
         filters = [
             ("class_id", "==", classId),
@@ -218,4 +198,4 @@ class NotificationService:
             }
         )
         
-        return sent_count
+        return sent_count

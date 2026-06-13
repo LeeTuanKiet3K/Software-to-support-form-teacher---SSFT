@@ -4,10 +4,8 @@ from dotenv import load_dotenv
 # Nạp file .env chứa các biến môi trường
 load_dotenv()
 
+# Lớp cấu hình ứng dụng (Application Configuration) lấy dữ liệu từ biến môi trường.
 class AppConfig:
-    """
-    Lớp cấu hình ứng dụng (Application Configuration) lấy dữ liệu từ biến môi trường.
-    """
     OLLAMA_MODEL_NAME = os.getenv("OLLAMA_MODEL_NAME", "llama3")
     OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     FIREBASE_SERVICE_ACCOUNT_JSON = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")

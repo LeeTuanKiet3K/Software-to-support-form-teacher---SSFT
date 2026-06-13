@@ -11,10 +11,8 @@ class FirebaseAuthHandler:
     Quản lý đăng nhập, đăng xuất và phiên hoạt động của người dùng.
     """
 
+    # Khởi tạo dịch vụ xác thực (Initialize Firebase Authentication).
     def __init__(self) -> None:
-        """
-        Khởi tạo dịch vụ xác thực (Initialize Firebase Authentication).
-        """
         self.m_serviceAccountPath = AppConfig.FIREBASE_SERVICE_ACCOUNT_JSON
         self.m_webApiKey = os.getenv("FIREBASE_WEB_API_KEY") 
         
@@ -26,10 +24,8 @@ class FirebaseAuthHandler:
             cred = credentials.Certificate(self.m_serviceAccountPath)
             firebase_admin.initialize_app(cred)
 
+    # Đăng nhập người dùng (User Sign In) bằng Identity Toolkit REST API.
     def signInWithEmail(self, email: str, password: str) -> Dict[str, Any]:
-        """
-        Đăng nhập người dùng (User Sign In) bằng Identity Toolkit REST API.
-        """
         if not self.m_webApiKey:
             return {"success": False, "error": "Lỗi cấu hình: Thiếu FIREBASE_WEB_API_KEY."}
             
@@ -58,16 +54,8 @@ class FirebaseAuthHandler:
         except Exception as e:
             return {"success": False, "error": f"Lỗi kết nối (Connection Error): {e}"}
 
-    def signIn(self, email: str, password: str) -> Dict[str, Any]:
-        """
-        Alias tương thích ngược cho lớp UI cũ.
-        """
-        return self.signInWithEmail(email, password)
-
+    # Đăng xuất người dùng (User Sign Out).
     def signOutUser(self, uid: str) -> bool:
-        """
-        Đăng xuất người dùng (User Sign Out).
-        """
         try:
             auth.revoke_refresh_tokens(uid)
             return True
@@ -78,16 +66,8 @@ class FirebaseAuthHandler:
             print(f"Lỗi khi thu hồi token đăng xuất (Log out error): {e}")
             return False
 
-    def signOut(self, uid: str) -> bool:
-        """
-        Alias tương thích ngược cho lớp UI cũ.
-        """
-        return self.signOutUser(uid)
-
+    # Lấy thông tin người dùng hiện tại.
     def getCurrentUser(self, idToken: str) -> Optional[Dict[str, Any]]:
-        """
-        Lấy thông tin người dùng hiện tại.
-        """
         try:
             decodedToken = auth.verify_id_token(idToken)
             return decodedToken
@@ -98,22 +78,17 @@ class FirebaseAuthHandler:
             print(f"Lỗi xác thực Token (Invalid token): {e}")
             return None
 
+    # Tạo người dùng mới trên Firebase Auth.
     def createAuthUser(self, email: str, password: str) -> Optional[str]:
-        """
-        Tạo người dùng mới trên Firebase Auth.
-        """
         try:
             userRecord = auth.create_user(email=email, password=password)
             return userRecord.uid
         except Exception as e:
-            from app.core.ErrorCodes import getErrorMessage
             print(f"Lỗi tạo tài khoản Auth (Auth creation error): {e}")
             return None
 
+    # Xóa tài khoản người dùng trên Firebase Auth.
     def deleteAuthUser(self, uid: str) -> bool:
-        """
-        Xóa tài khoản người dùng trên Firebase Auth.
-        """
         try:
             auth.delete_user(uid)
             return True
@@ -121,10 +96,8 @@ class FirebaseAuthHandler:
             print(f"Lỗi xóa tài khoản Auth (Auth deletion error): {e}")
             return False
 
+    # Cập nhật mật khẩu người dùng.
     def updatePassword(self, uid: str, newPassword: str) -> bool:
-        """
-        Cập nhật mật khẩu người dùng.
-        """
         try:
             auth.update_user(uid, password=newPassword)
             return True
@@ -132,10 +105,8 @@ class FirebaseAuthHandler:
             print(f"Lỗi cập nhật mật khẩu (Password update error): {e}")
             return False
 
+    # Tạo link đặt lại mật khẩu.
     def generatePasswordResetLink(self, email: str) -> Optional[str]:
-        """
-        Tạo link đặt lại mật khẩu.
-        """
         try:
             link = auth.generate_password_reset_link(email)
             return link

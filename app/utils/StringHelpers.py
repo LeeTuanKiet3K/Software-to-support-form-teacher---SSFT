@@ -11,12 +11,6 @@ class StringHelpers:
         """
         Loại bỏ ký tự đặc biệt, chuẩn hóa văn bản (Text Normalization).
         Bảo vệ JSON payload không bị phá vỡ.
-        
-        Args:
-            text (str): Văn bản gốc (Raw text).
-            
-        Returns:
-            str: Văn bản đã được làm sạch (Cleaned text).
         """
         if not text:
             return ""
@@ -31,12 +25,6 @@ class StringHelpers:
         """
         Trích xuất các từ khóa chính từ câu hỏi của sinh viên (Keyword Extraction).
         (Sẽ được gọi bởi Llama 3 trong module sau để Token Optimization).
-        
-        Args:
-            text (str): Văn bản truy vấn (Query text).
-            
-        Returns:
-            str: Chuỗi các từ khóa cốt lõi, cách nhau bởi khoảng trắng.
         """
         if not text:
             return ""
@@ -57,12 +45,6 @@ class StringHelpers:
     def formatResponse(text: str) -> str:
         """
         Định dạng lại văn bản (Text Formatting) để hiển thị chuyên nghiệp trên UI.
-        
-        Args:
-            text (str): Văn bản phản hồi thô từ AI (Raw response).
-            
-        Returns:
-            str: Văn bản đã được format cấu trúc chuẩn.
         """
         if not text:
             return ""
