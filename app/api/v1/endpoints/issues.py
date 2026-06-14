@@ -10,12 +10,7 @@ from datetime import datetime, timezone
 router = APIRouter()
 
 
-# ---------------------------------------------------------
-# Pydantic Schemas
-# ---------------------------------------------------------
-# ---------------------------------------------------------
 # Endpoints
-# ---------------------------------------------------------
 VALID_STATUSES = {"OPEN", "IN_PROGRESS", "RESOLVED", "PENDING_ADVISOR"}
 VALID_PRIORITIES = {"URGENT", "HIGH", "MEDIUM", "LOW"}
 
@@ -207,10 +202,7 @@ class CreateIssueFromFormResponse(BaseModel):
     message: str
 
 
-# ---------------------------------------------------------
 # Endpoints
-# ---------------------------------------------------------
-
 VALID_STATUSES = {"OPEN", "IN_PROGRESS", "RESOLVED", "PENDING_ADVISOR"}
 VALID_PRIORITIES = {"URGENT", "HIGH", "MEDIUM", "LOW"}
 

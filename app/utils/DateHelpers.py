@@ -20,9 +20,9 @@ def formatTimestamp(ts: any) -> str:
 def getCurrentSemester() -> str:
     """
     Xác định học kỳ hiện tại dựa trên thời gian thực.
-    HK1: Tháng 8 - 12
-    HK2: Tháng 1 - 5
-    HK Hè: Tháng 6 - 7
+    HK1: Tháng 9 - 1
+    HK2: Tháng 2 - 6
+    HK Hè: Tháng 7 - 8
     """
     currentMonth = datetime.now().month
     currentYear = datetime.now().year

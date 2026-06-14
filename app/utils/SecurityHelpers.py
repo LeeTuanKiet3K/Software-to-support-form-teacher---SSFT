@@ -1,10 +1,8 @@
 import secrets
 import string
 
+# Sinh mật khẩu tạm thời
 def generateTempPassword(length: int = 10) -> str:
-    """
-    Tạo mật khẩu tạm thời ngẫu nhiên và an toàn.
-    """
     m_alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
     while True:
         password = ''.join(secrets.choice(m_alphabet) for _ in range(length))

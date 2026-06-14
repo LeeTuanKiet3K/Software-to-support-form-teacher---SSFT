@@ -10,26 +10,12 @@ class IssueService:
     Dịch vụ quản lý các hệ thống phiếu ghi vấn đề (Issue Ticket System).
     Hỗ trợ Giáo viên chủ nhiệm theo dõi, phân loại và can thiệp kịp thời vào các tình huống khẩn cấp.
     """
-
+    # Liên kết Database Injection (Data Access Layer).
     def __init__(self) -> None:
-        """
-        Liên kết Database Injection (Data Access Layer).
-        """
         self.m_dbHandler = FirestoreHandler()
 
+    # Tự động thiết lập phiếu cảnh báo (Issue Ticket)
     def createIssueFromChat(self, chatId: str, studentId: str, analysis: Dict[str, Any]) -> str:
-        """
-        Tự động thiết lập phiếu cảnh báo (Issue Ticket) nếu mô hình Llama phát hiện 
-        độ nguy hiểm trong tín hiệu (Urgency Detection).
-        
-        Args:
-            chatId (str): ID phiên trò chuyện.
-            studentId (str): ID sinh viên gặp khó khăn.
-            analysis (Dict): Kết quả trả về từ hàm callLocalLlama của Middleware (chứa intent và sentiment).
-            
-        Returns:
-            str: Mã phiếu ghi (Ticket ID), trả về chuỗi rỗng nếu cấp độ quá thấp.
-        """
         intent = analysis.get("intent", "khong_ro")
         sentiment = analysis.get("sentiment", "trung_lap")
         
@@ -78,20 +64,8 @@ class IssueService:
             print(f"Hỏng tiến trình thiết lập phiếu (Ticket Initialization Failure): {systemErr}")
             return ""
 
+    # Khởi tạo phiếu ghi vấn đề do sinh viên chủ động nộp từ Biểu mẫu.
     def createIssueFromForm(self, studentId: str, title: str, category: str, priority: str, content: str) -> str:
-        """
-        Khởi tạo phiếu ghi vấn đề do sinh viên chủ động nộp từ Biểu mẫu.
-        
-        Args:
-            studentId (str): ID sinh viên nộp.
-            title (str): Tiêu đề vấn đề.
-            category (str): Phân loại (Học tập, Tâm lý, ...).
-            priority (str): Mức độ ưu tiên do sinh viên hoặc hệ thống đánh giá.
-            content (str): Nội dung chi tiết.
-            
-        Returns:
-            str: Mã phiếu ghi (Ticket ID).
-        """
         studentProfile = self.m_dbHandler.getUserProfile(studentId)
         studentClassId = studentProfile.get("class_id", "") if studentProfile else ""
 
@@ -119,17 +93,8 @@ class IssueService:
             print(f"Lỗi khi gửi biểu mẫu (Form Submission Error): {e}")
             return ""
 
+    # Truy xuất danh mục báo động cần xử lý (Fetch Pending Pipelines) để hiển thị cho Bảng điều khiển (Advisor Dashboard).
     def getPendingIssues(self, advisorClassId: str = "") -> List[Dict[str, Any]]:
-        """
-        Truy xuất danh mục báo động cần xử lý (Fetch Pending Pipelines) để 
-        hiển thị cho Bảng điều khiển (Advisor Dashboard). Lọc theo lớp học nếu được cung cấp.
-        
-        Args:
-            advisorClassId (str, optional): Lớp mà GVCN phụ trách để lọc issue.
-
-        Returns:
-            List[Dict]: Các phiếu còn trống hoặc đang trong vòng lặp làm việc, tự động sắp xếp theo độ ưu tiên.
-        """
         pendingIssuesList = []
         try:
             # Tạo tham chiếu truy vấn Database (Ref builder)
@@ -173,8 +138,8 @@ class IssueService:
             print(f"Lỗi truy xuất trạng thái kẹt lại (Fetch Pipeline Exception): {e}")
             return []
 
+    # Truy xuất các phiếu vấn đề của một sinh viên.
     def getStudentIssues(self, studentId: str) -> List[Dict[str, Any]]:
-        """Truy xuất các phiếu vấn đề của một sinh viên."""
         studentIssuesList = []
         try:
             issuesRef = self.m_dbHandler.m_db.collection("Issues")
@@ -191,17 +156,9 @@ class IssueService:
         except Exception as e:
             print(f"Lỗi truy xuất phiếu sinh viên: {e}")
             return []
+    
+    # Hỗ trợ tính toán thống kê và biểu đồ cho Bảng điều khiển (Advisor Dashboard).
     def getAllIssues(self, advisorClassId: str = "") -> List[Dict[str, Any]]:
-        """
-        Truy xuất toàn bộ danh sách phiếu tác vụ (Fetch All Issues).
-        Hỗ trợ tính toán thống kê và biểu đồ cho Bảng điều khiển (Advisor Dashboard).
-        
-        Args:
-            advisorClassId (str, optional): Lớp mà GVCN phụ trách để lọc issue.
-
-        Returns:
-            List[Dict]: Toàn bộ phiếu ghi nhận, dùng để tính toán KPI (resolved, chart data, v.v.).
-        """
         allIssuesList = []
         try:
             issuesRef = self.m_dbHandler.m_db.collection("Issues")
@@ -224,18 +181,8 @@ class IssueService:
             print(f"Lỗi truy xuất toàn bộ phiếu: {e}")
             return []
 
+    # Hoán đổi tiến độ xử lý của phiếu tác vụ (Ticket Status Updater).
     def updateIssueStatus(self, issueId: str, newStatus: str) -> bool:
-        """
-        Hoán đổi tiến độ xử lý của phiếu tác vụ (Ticket Status Updater).
-        Được gọi trực tiếp khi GVCN đã can thiệp trong Dashboard.
-        
-        Args:
-            issueId (str): ID duy nhất xác định thẻ ghi nhận.
-            newStatus (str): Mã chuyển tiếp nằm trong `Constants.IssueStatus` (vd: RESOLVED).
-            
-        Returns:
-            bool: Tín hiệu báo hoàn thành luồng dữ liệu (Data sync complete).
-        """
         try:
             updateMetadata = {
                 "status": newStatus,
@@ -249,8 +196,8 @@ class IssueService:
             print(f"Sự cố hệ thống cập nhật (DB Status Update Crash): {dbError}")
             return False
 
+    # Thêm tin nhắn trao đổi vào Phiếu vấn đề.
     def addMessageToIssue(self, issueId: str, senderId: str, senderRole: str, content: str) -> Dict[str, Any]:
-        """Thêm tin nhắn trao đổi vào Phiếu vấn đề."""
         messageData = {
             "issue_id": issueId,
             "sender_id": senderId,
@@ -283,8 +230,8 @@ class IssueService:
             print(f"Lỗi thêm tin nhắn vào issue (Add msg error): {e}")
             return {}
 
+    # Lấy lịch sử trò chuyện của một phiếu.
     def getIssueMessages(self, issueId: str) -> List[Dict[str, Any]]:
-        """Lấy lịch sử trò chuyện của một phiếu."""
         try:
             query = self.m_dbHandler.m_db.collection("IssueMessages")\
                 .where(filter=firestore.FieldFilter('issue_id', '==', issueId))\
@@ -303,8 +250,8 @@ class IssueService:
             print(f"Lỗi lấy lịch sử tin nhắn: {e}")
             return []
 
+    # Đánh dấu là đã đọc (reset unread_count).
     def markIssueAsRead(self, issueId: str, readerRole: str) -> bool:
-        """Đánh dấu là đã đọc (reset unread_count)."""
         try:
             updates = {}
             if readerRole == "STUDENT":
