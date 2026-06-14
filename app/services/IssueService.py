@@ -191,6 +191,38 @@ class IssueService:
         except Exception as e:
             print(f"Lỗi truy xuất phiếu sinh viên: {e}")
             return []
+    def getAllIssues(self, advisorClassId: str = "") -> List[Dict[str, Any]]:
+        """
+        Truy xuất toàn bộ danh sách phiếu tác vụ (Fetch All Issues).
+        Hỗ trợ tính toán thống kê và biểu đồ cho Bảng điều khiển (Advisor Dashboard).
+        
+        Args:
+            advisorClassId (str, optional): Lớp mà GVCN phụ trách để lọc issue.
+
+        Returns:
+            List[Dict]: Toàn bộ phiếu ghi nhận, dùng để tính toán KPI (resolved, chart data, v.v.).
+        """
+        allIssuesList = []
+        try:
+            issuesRef = self.m_dbHandler.m_db.collection("Issues")
+            
+            # Tải toàn bộ dữ liệu, lọc theo class_id ở Application Level (tiết kiệm Index)
+            # hoặc tạo FieldFilter trực tiếp nếu cần tối ưu
+            if advisorClassId:
+                query = issuesRef.where(filter=firestore.FieldFilter('class_id', '==', advisorClassId)).stream()
+            else:
+                query = issuesRef.stream()
+                
+            for doc in query:
+                data = doc.to_dict()
+                data['issue_id'] = doc.id
+                allIssuesList.append(data)
+                
+            return allIssuesList
+            
+        except Exception as e:
+            print(f"Lỗi truy xuất toàn bộ phiếu: {e}")
+            return []
 
     def updateIssueStatus(self, issueId: str, newStatus: str) -> bool:
         """

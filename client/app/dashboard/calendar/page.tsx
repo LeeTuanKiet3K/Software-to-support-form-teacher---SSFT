@@ -286,22 +286,7 @@ export default function CalendarPage() {
             </div>
           </div>
           
-          {/* Quick Stats/Summary */}
-          <div className="glass-card p-5">
-             <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-               <Users className="w-4 h-4 text-emerald-400" />
-               Lịch hẹn chờ duyệt
-             </h3>
-             <div className="flex items-center justify-between p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
-               <div>
-                 <p className="text-xs text-orange-200">Sinh viên đăng ký tư vấn</p>
-                 <p className="text-lg font-bold text-orange-400">3 yêu cầu</p>
-               </div>
-               <button className="text-xs font-medium bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-md transition-colors">
-                 Xem ngay
-               </button>
-             </div>
-          </div>
+
         </motion.div>
       </div>
 

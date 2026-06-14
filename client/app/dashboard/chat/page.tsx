@@ -21,7 +21,7 @@ export default function AdvisorChatPage() {
     {
       id: 'welcome',
       role: 'ai',
-      content: 'Chào cô, tôi là Trợ lý AI hỗ trợ Quản lý lớp học. Cô cần tôi giúp phân tích điểm số, tóm tắt tình hình sinh viên hay tra cứu quy định nào ạ?'
+      content: 'Xin chào! Tôi là Trợ lý AI hỗ trợ Quản lý lớp học. Thầy/Cô cần tôi giúp phân tích điểm số, tóm tắt tình hình sinh viên hay tra cứu quy định nào ạ?'
     }
   ]);
   const [input, setInput] = useState('');

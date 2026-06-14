@@ -4,19 +4,20 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertTriangle, Clock, CheckCircle2, Users,
-  Sparkles, RefreshCw, Key, LogOut, Bell, AlertCircle, X, Eye, EyeOff
+  Sparkles, Key, AlertCircle, X, Eye, EyeOff
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { KpiCard } from '@/components/KpiCard';
 import { IssueTable } from '@/components/IssueTable';
 import { IntentPieChart, WeeklyBarChart } from '@/components/StatsChart';
-import { mockPieData, mockBarData } from '@/lib/mockData';
 import { apiClient } from '@/lib/apiClient';
-import type { Issue } from '@/types';
+import type { Issue, PieChartData, BarChartData } from '@/types';
 
 export default function DashboardPage() {
   const router = useRouter();
   const [issues, setIssues] = useState<Issue[]>([]);
+  const [pieData, setPieData] = useState<PieChartData[]>([]);
+  const [barData, setBarData] = useState<BarChartData[]>([]);
   const [stats, setStats] = useState({ urgent: 0, pending: 0, resolved: 0, totalStudents: 0 });
   const [resolvingId, setResolvingId] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(true);
@@ -33,7 +34,6 @@ export default function DashboardPage() {
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
@@ -42,6 +42,8 @@ export default function DashboardPage() {
       const data = await apiClient(`/dashboard/summary?class_id=${classId}`);
       setStats(data.stats || { urgent: 0, pending: 0, resolved: 0, totalStudents: 0 });
       setIssues(data.issues || []);
+      setPieData(data.pieData || []);
+      setBarData(data.barData || []);
     } catch (error) {
       console.error("Lỗi lấy dữ liệu Dashboard:", error);
     } finally {
@@ -109,7 +111,7 @@ export default function DashboardPage() {
   const handleResolve = async (issueId: string) => {
     try {
       setResolvingId(issueId);
-      await apiClient(`/issues/${issueId}/status`, { 
+      await apiClient(`/issues/${issueId}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ new_status: 'RESOLVED' })
       });
@@ -148,7 +150,7 @@ export default function DashboardPage() {
       {/* --- KPI Cards --- */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
-          title="Khẩn cấp"
+          title="Quan trọng"
           value={stats.urgent}
           icon={AlertTriangle}
           color="red"
@@ -177,7 +179,7 @@ export default function DashboardPage() {
           icon={Users}
           color="blue"
           delay={0.3}
-          trend="Lớp 24CTT4"
+          trend=""
         />
       </div>
 
@@ -214,8 +216,8 @@ export default function DashboardPage() {
           transition={{ delay: 0.5, duration: 0.4 }}
         >
           <h2 className="text-slate-100 font-semibold text-lg">Phân tích</h2>
-          <IntentPieChart data={mockPieData} />
-          <WeeklyBarChart data={mockBarData} />
+          <IntentPieChart data={pieData} />
+          <WeeklyBarChart data={barData} />
         </motion.div>
       </div>
 

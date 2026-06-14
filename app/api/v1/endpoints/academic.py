@@ -103,29 +103,86 @@ async def add_or_update_student_grades(
 # CÁC ENDPOINT MỚI (Đồng bộ với Frontend Dashboard)
 # ---------------------------------------------------------
 @router.get("/class/{class_id}/grades")
-async def get_class_grades(class_id: str):
+async def get_class_grades(
+    class_id: str,
+    db_handler: FirestoreHandler = Depends(get_firestore_handler)
+):
     """Lấy danh sách điểm của toàn bộ lớp (Dành cho trang Quản lý Học vụ)"""
     print(f"[academic/class] Truy xuất bảng điểm lớp: {class_id}")
-    # Mock data phase 1 - Phase 2 thay bằng query Firestore
-    mock_students = [
-        {"student_id": "24120101", "name": "Trần Quang Tuấn", "gpa": 1.8, "is_low_score": True},
-        {"student_id": "24120102", "name": "Nguyễn Thị Bé", "gpa": 3.2, "is_low_score": False},
-        {"student_id": "24120103", "name": "Lê Văn Cường", "gpa": 2.5, "is_low_score": False},
-        {"student_id": "24120104", "name": "Phạm Minh Đức", "gpa": 3.8, "is_low_score": False},
-        {"student_id": "24120105", "name": "Hoàng Thị Yến", "gpa": 2.0, "is_low_score": True},
-    ]
-    return mock_students
+    
+    users = db_handler.queryDocuments(
+        collectionName="Users",
+        filters=[("role", "==", "student"), ("class_id", "==", class_id)]
+    )
+    
+    students_data = []
+    for user in users:
+        student_id = user.get("student_id")
+        full_name = user.get("full_name", "Ẩn danh")
+        
+        gpa = 0.0
+        is_low_score = False
+        
+        if student_id:
+            record = db_handler.getDocument("Academic_records", documentId=student_id)
+            if record:
+                gpa = float(record.get("gpa", 0.0))
+                is_low_score = bool(record.get("is_low_score", gpa < 2.0))
+                
+        students_data.append({
+            "student_id": student_id or user.get("id", ""),
+            "name": full_name,
+            "gpa": gpa,
+            "is_low_score": is_low_score
+        })
+        
+    return students_data
 
 @router.get("/class/{class_id}/students")
-async def get_class_students(class_id: str):
+async def get_class_students(
+    class_id: str,
+    db_handler: FirestoreHandler = Depends(get_firestore_handler)
+):
     """Lấy danh sách sinh viên tổng quan (Dành cho trang Quản lý Sinh viên)"""
-    mock_data = [
-        {"id": "24120101", "name": "Trần Quang Tuấn", "class": class_id, "status": "Nguy cơ", "gpa": 1.8, "stress": "Cao"},
-        {"id": "24120102", "name": "Nguyễn Thị Bé", "class": class_id, "status": "An toàn", "gpa": 3.2, "stress": "Thấp"},
-        {"id": "24120103", "name": "Lê Văn Cường", "class": class_id, "status": "Cảnh báo", "gpa": 2.5, "stress": "Vừa"},
-        {"id": "24120104", "name": "Phạm Minh Đức", "class": class_id, "status": "An toàn", "gpa": 3.8, "stress": "Thấp"},
-    ]
-    return mock_data
+    users = db_handler.queryDocuments(
+        collectionName="Users",
+        filters=[("role", "==", "student"), ("class_id", "==", class_id)]
+    )
+    
+    students_data = []
+    for user in users:
+        student_id = user.get("student_id")
+        full_name = user.get("full_name", "Ẩn danh")
+        
+        gpa = 0.0
+        if student_id:
+            record = db_handler.getDocument("Academic_records", documentId=student_id)
+            if record:
+                gpa = float(record.get("gpa", 0.0))
+                
+        status = "An toàn"
+        stress = "Thấp"
+        
+        if record is None:
+            status = "Chưa có điểm"
+            stress = "Thấp"
+        elif gpa < 2.0:
+            status = "Nguy cơ"
+            stress = "Cao"
+        elif gpa < 2.5:
+            status = "Cảnh báo"
+            stress = "Vừa"
+            
+        students_data.append({
+            "id": student_id or user.get("id", ""),
+            "name": full_name,
+            "class": class_id,
+            "status": status,
+            "gpa": gpa,
+            "stress": stress
+        })
+        
+    return students_data
 
 @router.post("/grades/upload")
 async def upload_grades_file(file: UploadFile = File(...)):

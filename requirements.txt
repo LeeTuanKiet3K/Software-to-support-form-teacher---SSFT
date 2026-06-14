@@ -1,6 +1,3 @@
-# --- Web Interface (Giao diện Web) ---
-streamlit>=1.32.0
-
 # --- API Layer (Tầng API) ---
 fastapi>=0.115.0
 uvicorn>=0.30.0
