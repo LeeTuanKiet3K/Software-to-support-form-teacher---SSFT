@@ -38,7 +38,7 @@ class IssueService:
             return ""
 
         # Lấy thông tin lớp học của sinh viên
-        studentProfile = self.m_dbHandler.getUserProfile(studentId)
+        studentProfile = self.m_dbHandler.queryOne("Users", "student_id", studentId)
         studentClassId = studentProfile.get("class_id", "") if studentProfile else ""
 
         # Thiết lập Schema dữ liệu ánh xạ lên Cloud (Cloud Data Schema)
@@ -66,7 +66,7 @@ class IssueService:
 
     # Khởi tạo phiếu ghi vấn đề do sinh viên chủ động nộp từ Biểu mẫu.
     def createIssueFromForm(self, studentId: str, title: str, category: str, priority: str, content: str) -> str:
-        studentProfile = self.m_dbHandler.getUserProfile(studentId)
+        studentProfile = self.m_dbHandler.queryOne("Users", "student_id", studentId)
         studentClassId = studentProfile.get("class_id", "") if studentProfile else ""
 
         issueData = {
@@ -222,6 +222,13 @@ class IssueService:
                     # Đổi trạng thái nếu GVCN trả lời
                     if issueData.get("status") == IssueStatus.OPEN:
                         updates["status"] = IssueStatus.IN_PROGRESS
+                        
+                    # Push notification to the student
+                    student_id = issueData.get("student_id")
+                    if student_id:
+                        from app.features.notifications.NotificationService import NotificationService
+                        notifService = NotificationService()
+                        notifService.sendAdvisorReplyNotification(student_id, content)
 
                 self.m_dbHandler.updateDocument("Issues", issueId, updates)
 

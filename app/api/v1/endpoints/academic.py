@@ -185,16 +185,86 @@ async def get_class_students(
     return students_data
 
 @router.post("/grades/upload")
-async def upload_grades_file(file: UploadFile = File(...)):
-    """Nhận file Excel/CSV bảng điểm từ GVCN tải lên"""
+async def upload_grades_file(
+    file: UploadFile = File(...),
+    db_handler: FirestoreHandler = Depends(get_firestore_handler),
+    academic_service: AcademicService = Depends(get_academic_service)
+):
+    """Nhận file Excel/CSV bảng điểm từ GVCN tải lên và cập nhật điểm"""
     print(f"[academic/upload] Nhận file: {file.filename}")
     if not file.filename.endswith(('.csv', '.xlsx', '.xls')):
         raise HTTPException(status_code=400, detail="Chỉ chấp nhận file .csv hoặc .xlsx")
     
-    # Giả lập thời gian hệ thống AI phân tích file
-    time.sleep(1.5)
-    
-    return {
-        "success": True,
-        "message": f"Đã tải lên và xử lý file {file.filename}",
-    }
+    try:
+        import pandas as pd
+        import io
+        
+        contents = await file.read()
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(io.BytesIO(contents))
+        else:
+            df = pd.read_excel(io.BytesIO(contents))
+            
+        # Chuẩn hóa tên cột để dễ tìm kiếm (viết thường, bỏ khoảng trắng dư thừa)
+        df.columns = [str(col).strip().lower() for col in df.columns]
+        
+        # Tìm cột chứa MSSV và GPA hoặc Điểm TB
+        mssv_col = next((col for col in df.columns if "mssv" in col or "mã sinh viên" in col or "student_id" in col), None)
+        gpa_col = next((col for col in df.columns if "gpa" in col or "điểm trung bình" in col or "điểm tb" in col), None)
+        
+        if not mssv_col or not gpa_col:
+            raise HTTPException(status_code=400, detail="File phải chứa cột Mã sinh viên (MSSV) và Điểm trung bình (GPA)")
+            
+        updated_count = 0
+        skipped_count = 0
+        
+        for _, row in df.iterrows():
+            mssv = str(row[mssv_col]).strip()
+            
+            # Xử lý gpa (bỏ qua nếu gpa bị rỗng hoặc không phải số)
+            try:
+                gpa = float(row[gpa_col])
+            except (ValueError, TypeError):
+                skipped_count += 1
+                continue
+                
+            if not mssv or pd.isna(gpa) or mssv == "nan":
+                skipped_count += 1
+                continue
+                
+            # Kiểm tra xem sinh viên có tồn tại trong hệ thống (role = student)
+            user = db_handler.queryOne("Users", "student_id", mssv)
+            
+            if user and user.get("role") == "student":
+                class_id = user.get("class_id", "")
+                
+                # Dữ liệu cập nhật
+                data = {
+                    "student_id": mssv,
+                    "class_id": class_id,
+                    "gpa": gpa,
+                    # Tương lai có thể map thêm môn học từ file vào mảng subjects
+                }
+                
+                success = academic_service.inputGrade(data)
+                if success:
+                    updated_count += 1
+                else:
+                    skipped_count += 1
+            else:
+                # Không tìm thấy sinh viên trong hệ thống
+                skipped_count += 1
+                
+        return {
+            "success": True,
+            "message": f"Đã xử lý file {file.filename}. Cập nhật thành công {updated_count} sinh viên, bỏ qua {skipped_count} dòng.",
+            "updated_count": updated_count,
+            "skipped_count": skipped_count
+        }
+        
+    except ImportError:
+        print("[academic/upload] Thiếu thư viện pandas hoặc openpyxl")
+        raise HTTPException(status_code=500, detail="Hệ thống thiếu thư viện xử lý Excel. Vui lòng cài đặt pandas và openpyxl.")
+    except Exception as e:
+        print(f"[academic/upload] Lỗi xử lý file: {e}")
+        raise HTTPException(status_code=500, detail=f"Lỗi khi đọc và xử lý file: {str(e)}")

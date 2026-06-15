@@ -3,11 +3,15 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from app.api.deps import get_middleware, get_orchestrator, get_aggregator
+from app.api.deps import get_middleware, get_orchestrator, get_aggregator, get_issue_service
 from app.core.Middleware import Middleware
 from app.features.chat.ChatOrchestrator import ChatOrchestrator
 from app.features.chat.ContextManager import ContextManager
 from app.features.chat.ResponseAggregator import ResponseAggregator
+from app.features.chat.PromptTemplates import SYSTEM_PROMPT_FOR_ADVISOR
+from app.services.IssueService import IssueService
+from app.core.Config import AppConfig
+from groq import Groq
 
 router = APIRouter()
 
@@ -24,6 +28,7 @@ class StudentChatRequest(BaseModel):
 
 class AdvisorChatRequest(BaseModel):
     message: str = Field(..., min_length=1)
+    class_id: str = Field("", description="Lớp mà GVCN phụ trách")
 
 class ChatMessageResponse(BaseModel):
     chat_id: str
@@ -89,29 +94,86 @@ async def student_chat(
     )
 
 @router.post("/advisor", status_code=201)
-async def advisor_chat(payload: AdvisorChatRequest):
+async def advisor_chat(
+    payload: AdvisorChatRequest,
+    issue_service: IssueService = Depends(get_issue_service)
+):
     """Trợ lý AI phân tích dữ liệu cho Giáo viên (Dashboard)"""
-    print(f"[chat/advisor] GV ra lệnh: {payload.message}")
+    print(f"[chat/advisor] GV ra lệnh: {payload.message} - Lớp: {payload.class_id}")
     
-    # Mock data phản hồi
-    response = {
-        "content": "Hệ thống đã nhận lệnh của cô. Đây là báo cáo sơ bộ:",
-        "actions": ["Tạo thông báo lớp", "Lọc SV rớt môn"],
-        "dataTable": None
-    }
-    
-    if "lọc" in payload.message.lower() or "rớt" in payload.message.lower() or "cảnh báo" in payload.message.lower():
-        response["dataTable"] = {
-            "headers": ["MSSV", "Họ Tên", "GPA", "Tình trạng"],
-            "rows": [
-                ["24120101", "Trần Quang Tuấn", "1.8", "Nguy cơ cao"],
-                ["24120105", "Hoàng Thị Yến", "2.0", "Cần theo dõi"]
-            ]
-        }
-        response["content"] = "Dạ, đây là danh sách sinh viên nằm trong diện cảnh báo học vụ dựa trên đợt điểm mới nhất:"
-        response["actions"] = ["Xuất file Excel", "Gửi email nhắc nhở"]
+    # 1. Fetch real class issues
+    try:
+        raw_issues = issue_service.getAllIssues(advisorClassId=payload.class_id)
+        # Lọc các vấn đề đang mở hoặc đang xử lý
+        active_issues = [i for i in raw_issues if i.get("status") in ("OPEN", "IN_PROGRESS", "PENDING_ADVISOR")]
+        
+        # Build context string
+        if not active_issues:
+            class_context = "Hiện tại lớp không có vấn đề nào cần xử lý."
+        else:
+            class_context = f"Lớp hiện có {len(active_issues)} vấn đề cần xử lý:\n"
+            for issue in active_issues:
+                content = issue.get("content") or issue.get("student_message_preview") or "Không có nội dung"
+                priority = issue.get("priority", "N/A")
+                student_id = issue.get("student_id", "N/A")
+                class_context += f"- Sinh viên {student_id} (Ưu tiên: {priority}): {content}\n"
+    except Exception as e:
+        print(f"[chat/advisor] Lỗi lấy dữ liệu lớp: {e}")
+        class_context = "Không thể lấy dữ liệu lớp học lúc này do lỗi hệ thống."
 
-    return response
+    # 2. Call Groq
+    apiKey = AppConfig.GROQ_API_KEY
+    if not apiKey:
+        return {
+            "content": "Hệ thống AI hiện đang bảo trì (Thiếu API Key). Thầy/Cô vui lòng thử lại sau.",
+            "actions": [],
+            "dataTable": None
+        }
+
+    try:
+        groqClient = Groq(api_key=apiKey)
+        system_prompt = SYSTEM_PROMPT_FOR_ADVISOR.format(
+            class_context=class_context,
+            user_message=payload.message
+        )
+        
+        completion = groqClient.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": payload.message},
+            ],
+            temperature=0.3,
+            max_tokens=1024,
+        )
+        ai_response = completion.choices[0].message.content
+        
+        # 3. Build response
+        response = {
+            "content": ai_response,
+            "actions": ["Tạo thông báo lớp", "Lọc SV rớt môn"],
+            "dataTable": None
+        }
+        
+        # Giữ lại logic mock cho bảng dữ liệu rớt môn nếu có từ khóa
+        if "lọc" in payload.message.lower() or "rớt" in payload.message.lower() or "cảnh báo" in payload.message.lower():
+            response["dataTable"] = {
+                "headers": ["MSSV", "Họ Tên", "GPA", "Tình trạng"],
+                "rows": [
+                    ["24120101", "Trần Quang Tuấn", "1.8", "Nguy cơ cao"],
+                    ["24120105", "Hoàng Thị Yến", "2.0", "Cần theo dõi"]
+                ]
+            }
+            response["actions"] = ["Xuất file Excel", "Gửi email nhắc nhở"]
+
+        return response
+    except Exception as e:
+        print(f"[chat/advisor] Lỗi gọi Groq: {e}")
+        return {
+            "content": "Trợ lý AI đang gặp sự cố kết nối. Thầy/Cô vui lòng thử lại sau.",
+            "actions": [],
+            "dataTable": None
+        }
 
 
 @router.get("/history/{chat_id}", response_model=ChatHistoryResponse)

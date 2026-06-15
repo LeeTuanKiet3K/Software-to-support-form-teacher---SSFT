@@ -182,8 +182,8 @@ export default function StudentPage() {
 
     let interval: NodeJS.Timeout;
     if (activeTab === 'my-issues') {
-      fetchMyIssues();
-      interval = setInterval(fetchMyIssues, 10000); // Tự động cập nhật mỗi 10 giây
+      fetchMyIssues(true);
+      interval = setInterval(() => fetchMyIssues(false), 10000); // Tự động cập nhật mỗi 10 giây, không hiển thị loading
     }
 
     return () => {
@@ -191,8 +191,8 @@ export default function StudentPage() {
     };
   }, [activeTab, isCheckingSession, studentId]);
 
-  const fetchMyIssues = async () => {
-    setIssuesLoading(true);
+  const fetchMyIssues = async (showLoading = true) => {
+    if (showLoading) setIssuesLoading(true);
     try {
       const data = await apiClient(`/issues/student/${studentId}`);
       if (data && data.issues) {
@@ -201,7 +201,7 @@ export default function StudentPage() {
     } catch (error) {
       console.error(error);
     } finally {
-      setIssuesLoading(false);
+      if (showLoading) setIssuesLoading(false);
     }
   };
 
@@ -342,10 +342,10 @@ export default function StudentPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col max-w-4xl mx-auto px-4 bg-navy-950">
+    <div className="min-h-screen flex flex-col bg-navy-950">
       {/* --- Header --- */}
       <motion.header
-        className="flex items-center justify-between py-4 border-b border-white/[0.06] sticky top-0 z-20 bg-navy-950"
+        className="flex items-center justify-between py-4 px-6 border-b border-white/[0.06] sticky top-0 z-20 bg-navy-950"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -360,446 +360,454 @@ export default function StudentPage() {
           </div>
         </div>
 
-        <div className="flex gap-4 items-center">
-          {/* Notification Bell */}
-          <div className="relative" ref={notifRef}>
-            <button
-              onClick={() => setShowNotif(!showNotif)}
-              className={`relative p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/5 transition-colors group
-                          ${showNotif ? 'bg-white/10 text-white' : ''}`}
-            >
-              <Bell className={`w-5 h-5 ${notifications.filter(n => !n.read).length > 0 ? 'group-hover:animate-wiggle' : ''}`} />
-              {notifications.filter(n => !n.read).length > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-navy-900"></span>
-              )}
-            </button>
-
-            {/* Notification Dropdown */}
-            <AnimatePresence>
-              {showNotif && (
-                <motion.div
-                  className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-navy-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="flex items-center justify-between p-4 border-b border-white/5 bg-navy-800/50">
-                    <h3 className="text-white font-semibold text-sm">Thông báo</h3>
-                  </div>
-                  <div className="max-h-80 overflow-y-auto custom-scrollbar">
-                    {notifications.length === 0 ? (
-                      <div className="p-6 text-center text-slate-400 text-sm">Chưa có thông báo nào.</div>
-                    ) : (
-                      notifications.map((notif) => (
-                        <div
-                          key={notif.id}
-                          className={`p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors flex gap-3 group/item
-                                     ${!notif.read ? 'bg-purple-500/5' : ''}`}
-                        >
-                          <div className="shrink-0 mt-1">
-                            {notif.type === 'announcement' ? <Bell className="w-4 h-4 text-purple-400" /> :
-                              notif.type === 'urgent' ? <AlertTriangle className="w-4 h-4 text-red-400" /> :
-                                <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm mb-1 ${!notif.read ? 'text-white font-semibold' : 'text-slate-300 font-medium'}`}>
-                              {notif.title}
-                            </p>
-                            <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed whitespace-pre-wrap">{notif.desc}</p>
-                            <p className="text-[10px] text-slate-500 mt-2">{notif.time}</p>
-                          </div>
-                          <div className="flex flex-col gap-2 items-center opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity">
-                            {!notif.read && (
-                              <button onClick={(e) => handleMarkAsRead(notif.id, e)} className="p-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-md tooltip" title="Đánh dấu đã đọc">
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                            <button onClick={(e) => handleDeleteNotification(notif.id, e)} className="p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-md tooltip" title="Xóa">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <div className="h-6 w-px bg-white/10 hidden sm:block"></div>
-
-          <div className="relative" ref={profileRef}>
-            <button
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-            >
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 p-[1px]">
-                <div className="w-full h-full rounded-full bg-navy-900 flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
-                </div>
-              </div>
-            </button>
-
-            <AnimatePresence>
-              {showProfileMenu && (
-                <motion.div
-                  className="absolute right-0 mt-2 w-48 bg-navy-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden py-1 z-50"
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="px-4 py-3 border-b border-white/5 mb-1">
-                    <p className="text-sm font-medium text-white truncate">{studentName}</p>
-                    <p className="text-xs text-slate-400">Sinh viên</p>
-                  </div>
-
-                  <button
-                    onClick={() => { setShowProfileMenu(false); setShowPasswordModal(true); }}
-                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
-                  >
-                    <Key className="w-4 h-4" /> Đổi mật khẩu
-                  </button>
-                  <button
-                    onClick={() => { setShowProfileMenu(false); sessionStorage.clear(); router.push('/login'); }}
-                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-red-400 hover:bg-red-400/10 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" /> Đăng xuất
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
       </motion.header>
 
-      {/* --- Tab Navigation --- */}
-      <div className="flex bg-navy-900/50 p-1.5 rounded-2xl my-6 border border-white/[0.05]">
-        <button
-          onClick={() => setActiveTab('ai')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'ai' ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <Bot className="w-4 h-4" /> Hỏi Pet hỗ trợ
-        </button>
-        <button
-          onClick={() => setActiveTab('form')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'form' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <MessageSquare className="w-4 h-4" /> Liên hệ GVCN
-        </button>
-        <button
-          onClick={() => setActiveTab('grades')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'grades' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <BookOpen className="w-4 h-4" /> Bảng điểm
-        </button>
-        <button
-          onClick={() => setActiveTab('my-issues')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'my-issues' ? 'bg-orange-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <AlertCircle className="w-4 h-4" /> Vấn đề của tôi
-        </button>
-      </div>
+      <div className="flex flex-1 overflow-hidden">
+        {/* --- Sidebar --- */}
+        <div className="w-64 shrink-0 border-r border-white/[0.06] flex flex-col py-6 bg-navy-950 hidden md:flex">
+          <div className="px-4 mb-2">
+            <p className="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wider px-2">DỊCH VỤ CHÍNH</p>
+            <div className="space-y-1">
+              <button
+                onClick={() => setActiveTab('ai')}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'ai' ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg shadow-purple-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              >
+                <Bot className="w-5 h-5" /> Hỏi Pet hỗ trợ
+              </button>
+              <button
+                onClick={() => setActiveTab('form')}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'form' ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg shadow-purple-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              >
+                <MessageSquare className="w-5 h-5" /> Liên hệ GVCN
+              </button>
+              <button
+                onClick={() => setActiveTab('grades')}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'grades' ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg shadow-purple-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              >
+                <BookOpen className="w-5 h-5" /> Bảng điểm
+              </button>
+              <button
+                onClick={() => setActiveTab('my-issues')}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'my-issues' ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg shadow-purple-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              >
+                <AlertCircle className="w-5 h-5" /> Vấn đề của tôi
+              </button>
+            </div>
+          </div>
 
-      <div className="flex-1 overflow-hidden flex flex-col relative">
-        <AnimatePresence mode="wait">
+          {/* TIỆN ÍCH & QUY ĐỊNH was moved to QUICK ACTIONS */}
 
-          {/* TAB 1: AI CHAT */}
-          {activeTab === 'ai' && (
-            <motion.div
-              key="tab-ai"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="flex flex-col h-full absolute inset-0"
-            >
-              <div className="flex gap-2 py-2 overflow-x-auto scrollbar-none">
-                {QUICK_ACTIONS.map(({ label, icon: Icon }) => (
-                  <button
-                    key={label}
-                    onClick={() => handleSendAI(label)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full shrink-0
-                               bg-navy-800/60 border border-white/[0.08] text-slate-300 text-sm
-                               hover:bg-navy-700/60 hover:border-purple-500/30 hover:text-white"
+          {/* User Profile and Notifications (Moved to bottom of sidebar) */}
+          <div className="mt-auto px-4 pt-4 border-t border-white/[0.06] flex items-center justify-between">
+            <div className="relative" ref={profileRef}>
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              >
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 p-[1px]">
+                  <div className="w-full h-full rounded-full bg-navy-900 flex items-center justify-center">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                </div>
+                <div className="text-left hidden md:block">
+                  <p className="text-sm font-medium text-white truncate max-w-[100px]">{studentName}</p>
+                </div>
+              </button>
+
+              <AnimatePresence>
+                {showProfileMenu && (
+                  <motion.div
+                    className="absolute bottom-full left-0 mb-2 w-48 bg-navy-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden py-1 z-50"
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    <Icon className="w-3.5 h-3.5 text-purple-400" /> {label}
-                  </button>
-                ))}
-              </div>
+                    <div className="px-4 py-3 border-b border-white/5 mb-1">
+                      <p className="text-sm font-medium text-white truncate">{studentName}</p>
+                      <p className="text-xs text-slate-400">Sinh viên</p>
+                    </div>
 
-              <div className="flex-1 space-y-5 py-4 overflow-y-auto pr-2 custom-scrollbar">
-                {messages.length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-3">
-                    <Bot className="w-12 h-12 text-slate-700" />
-                    <p>Chào bạn, mình là Pet cưng của GVCN. Mình có thể giúp gì cho bạn?</p>
-                  </div>
-                )}
-                {messages.map((msg, idx) => (
-                  <div key={idx} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1
-                      ${msg.role === 'user' ? 'bg-purple-500/20 border border-purple-500/30' : 'bg-blue-500/20 border border-blue-500/30'}`}>
-                      {msg.role === 'user' ? <User className="w-4 h-4 text-purple-300" /> : <Bot className="w-4 h-4 text-blue-300" />}
-                    </div>
-                    <div className={`max-w-[80%] space-y-2 flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                      <div className={`px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap
-                        ${msg.role === 'user' ? 'bubble-user' : 'bubble-ai'}`}>
-                        {msg.content}
-                      </div>
-                      {/* Image Attachments */}
-                      {msg.imageUrls && msg.imageUrls.length > 0 && (
-                        <div className="flex flex-col gap-2">
-                          {msg.imageUrls.map((url, i) => (
-                            <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                              <img
-                                src={url}
-                                alt={`Thông tin bổ sung: ${i + 1}`}
-                                className="max-w-xs rounded-xl border border-white/10 hover:opacity-90 transition-opacity cursor-pointer"
-                                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                              />
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                      {msg.actions && msg.actions.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {msg.actions.map((action, i) => (
-                            <button
-                              key={i}
-                              onClick={() => handleSendAI(action)}
-                              className="text-xs px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 hover:bg-purple-500/20"
-                            >
-                              {action}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {isTyping && (
-                  <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shrink-0">
-                      <Sparkles className="w-4 h-4 text-blue-300 animate-pulse" />
-                    </div>
-                    <div className="bubble-ai px-4 py-3">
-                      <div className="flex gap-1.5 items-center h-4">
-                        <div className="typing-dot" /><div className="typing-dot" /><div className="typing-dot" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div ref={bottomRef} />
-              </div>
-
-              <div className="py-4 border-t border-white/[0.06]">
-                <div className="flex gap-3 items-end">
-                  <textarea
-                    ref={inputRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Nhắn tin với Pet... (Enter để gửi)"
-                    rows={1}
-                    disabled={isTyping}
-                    className="input-dark flex-1 resize-none leading-relaxed max-h-32 overflow-y-auto"
-                    style={{ fieldSizing: 'content' } as React.CSSProperties}
-                  />
-                  <button onClick={() => handleSendAI()} disabled={!input.trim() || isTyping} className="btn-primary p-3 shrink-0 disabled:opacity-40">
-                    <Send className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* TAB 2: GỬI GVCN FORM */}
-          {activeTab === 'form' && (
-            <motion.div
-              key="tab-form"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="flex flex-col h-full absolute inset-0 overflow-y-auto pb-10"
-            >
-              <div className="glass-card p-6 md:p-8 max-w-2xl mx-auto w-full mt-4">
-                <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
-                  <div className="p-3 bg-purple-500/20 rounded-xl">
-                    <MessageSquare className="w-6 h-6 text-purple-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Gửi vấn đề đến GVCN</h2>
-                    <p className="text-sm text-slate-400">Tin nhắn này sẽ được gửi trực tiếp đến hộp thư của GVCN</p>
-                  </div>
-                </div>
-
-                {formSuccess ? (
-                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6 text-center">
-                    <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
-                    <h3 className="text-emerald-400 font-semibold mb-2">{formSuccess}</h3>
-                    <p className="text-slate-400 text-sm mb-6">Giáo viên sẽ nhận được thông báo và phản hồi lại cho bạn sớm nhất có thể.</p>
-                    <button onClick={() => setFormSuccess('')} className="btn-primary bg-emerald-600 hover:bg-emerald-500 px-6">
-                      Gửi tin nhắn khác
-                    </button>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubmitForm} className="space-y-5">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">Tiêu đề</label>
-                      <input
-                        type="text"
-                        value={formTitle}
-                        onChange={(e) => setFormTitle(e.target.value)}
-                        className="input-dark w-full"
-                        placeholder="Ví dụ: Tư vấn về tâm lý học tập..."
-                        disabled={formLoading}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">Nội dung chi tiết</label>
-                      <textarea
-                        value={formContent}
-                        onChange={(e) => setFormContent(e.target.value)}
-                        className="input-dark w-full min-h-[150px] resize-y"
-                        placeholder="Mô tả chi tiết vấn đề của bạn để GVCN có thể hỗ trợ tốt nhất..."
-                        disabled={formLoading}
-                        required
-                      />
-                    </div>
-                    {formError && (
-                      <p className="text-red-400 text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4" /> {formError}</p>
-                    )}
                     <button
-                      type="submit"
-                      disabled={formLoading}
-                      className="w-full btn-primary bg-purple-600 hover:bg-purple-500 py-3 disabled:opacity-50"
+                      onClick={() => { setShowProfileMenu(false); setShowPasswordModal(true); }}
+                      className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
                     >
-                      {formLoading ? 'Đang gửi...' : 'Gửi thông tin cho GVCN'}
+                      <Key className="w-4 h-4" /> Đổi mật khẩu
                     </button>
-                  </form>
+                    <button
+                      onClick={() => { setShowProfileMenu(false); sessionStorage.clear(); router.push('/login'); }}
+                      className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-red-400 hover:bg-red-400/10 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" /> Đăng xuất
+                    </button>
+                  </motion.div>
                 )}
-              </div>
-            </motion.div>
-          )}
+              </AnimatePresence>
+            </div>
 
-          {/* TAB 3: GRADES */}
-          {activeTab === 'grades' && (
-            <motion.div
-              key="tab-grades"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="flex flex-col h-full absolute inset-0 overflow-y-auto pb-10"
-            >
-              <div className="glass-card p-6 md:p-8 max-w-2xl mx-auto w-full mt-4">
-                <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/10">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-emerald-500/20 rounded-xl">
-                      <BookOpen className="w-6 h-6 text-emerald-400" />
+            <div className="relative" ref={notifRef}>
+              <button
+                onClick={() => setShowNotif(!showNotif)}
+                className={`relative p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/5 transition-colors group
+                            ${showNotif ? 'bg-white/10 text-white' : ''}`}
+              >
+                <Bell className={`w-5 h-5 ${notifications.filter(n => !n.read).length > 0 ? 'group-hover:animate-wiggle' : ''}`} />
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-navy-900"></span>
+                )}
+              </button>
+
+              {/* Notification Dropdown */}
+              <AnimatePresence>
+                {showNotif && (
+                  <motion.div
+                    className="absolute bottom-full left-0 mb-2 w-80 max-w-[calc(100vw-2rem)] bg-navy-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="flex items-center justify-between p-4 border-b border-white/5 bg-navy-800/50">
+                      <h3 className="text-white font-semibold text-sm">Thông báo</h3>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                      {notifications.length === 0 ? (
+                        <div className="p-6 text-center text-slate-400 text-sm">Chưa có thông báo nào.</div>
+                      ) : (
+                        notifications.map((notif) => (
+                          <div
+                            key={notif.id}
+                            className={`p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors flex gap-3 group/item
+                                       ${!notif.read ? 'bg-purple-500/5' : ''}`}
+                          >
+                            <div className="shrink-0 mt-1">
+                              {notif.type === 'announcement' ? <Bell className="w-4 h-4 text-purple-400" /> :
+                                notif.type === 'urgent' ? <AlertTriangle className="w-4 h-4 text-red-400" /> :
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm mb-1 ${!notif.read ? 'text-white font-semibold' : 'text-slate-300 font-medium'}`}>
+                                {notif.title}
+                              </p>
+                              <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed whitespace-pre-wrap">{notif.desc}</p>
+                              <p className="text-[10px] text-slate-500 mt-2">{notif.time}</p>
+                            </div>
+                            <div className="flex flex-col gap-2 items-center opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity">
+                              {!notif.read && (
+                                <button onClick={(e) => handleMarkAsRead(notif.id, e)} className="p-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-md tooltip" title="Đánh dấu đã đọc">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              <button onClick={(e) => handleDeleteNotification(notif.id, e)} className="p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-md tooltip" title="Xóa">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+
+        {/* --- Main Content --- */}
+        <div className="flex-1 overflow-hidden flex flex-col relative bg-[#0B1120]">
+          <AnimatePresence mode="wait">
+
+            {/* TAB 1: AI CHAT */}
+            {activeTab === 'ai' && (
+              <motion.div
+                key="tab-ai"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="flex flex-col h-full absolute inset-0"
+              >
+                <div className="flex gap-3 px-6 pt-6 pb-2 overflow-x-auto scrollbar-none shrink-0">
+                  {QUICK_ACTIONS.map(({ label, icon: Icon }) => (
+                    <button
+                      key={label}
+                      onClick={() => handleSendAI(label)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-full shrink-0
+                               bg-transparent border border-white/20 text-slate-300 text-xs font-medium
+                               hover:bg-white/5 hover:border-purple-500/50 hover:text-white transition-all"
+                    >
+                      <Icon className="w-4 h-4 text-purple-400" />
+                      <span>{label}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex-1 space-y-5 px-6 pb-6 pt-2 overflow-y-auto custom-scrollbar">
+                  {messages.length === 0 && (
+                    <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-3">
+                      <Bot className="w-12 h-12 text-slate-700" />
+                      <p>Chào bạn, mình là Pet cưng của GVCN. Mình có thể giúp gì cho bạn?</p>
+                    </div>
+                  )}
+                  {messages.map((msg, idx) => (
+                    <div key={idx} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1
+                      ${msg.role === 'user' ? 'bg-purple-500/20 border border-purple-500/30' : 'bg-blue-500/20 border border-blue-500/30'}`}>
+                        {msg.role === 'user' ? <User className="w-4 h-4 text-purple-300" /> : <Bot className="w-4 h-4 text-blue-300" />}
+                      </div>
+                      <div className={`max-w-[80%] space-y-2 flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                        <div className={`px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap
+                        ${msg.role === 'user' ? 'bubble-user' : 'bubble-ai'}`}>
+                          {msg.content}
+                        </div>
+                        {/* Image Attachments */}
+                        {msg.imageUrls && msg.imageUrls.length > 0 && (
+                          <div className="flex flex-col gap-2">
+                            {msg.imageUrls.map((url, i) => (
+                              <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                                <img
+                                  src={url}
+                                  alt={`Thông tin bổ sung: ${i + 1}`}
+                                  className="max-w-xs rounded-xl border border-white/10 hover:opacity-90 transition-opacity cursor-pointer"
+                                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                                />
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                        {msg.actions && msg.actions.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {msg.actions.map((action, i) => (
+                              <button
+                                key={i}
+                                onClick={() => handleSendAI(action)}
+                                className="text-xs px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 hover:bg-purple-500/20"
+                              >
+                                {action}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {isTyping && (
+                    <div className="flex gap-3">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shrink-0">
+                        <Sparkles className="w-4 h-4 text-blue-300 animate-pulse" />
+                      </div>
+                      <div className="bubble-ai px-4 py-3">
+                        <div className="flex gap-1.5 items-center h-4">
+                          <div className="typing-dot" /><div className="typing-dot" /><div className="typing-dot" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={bottomRef} />
+                </div>
+
+                <div className="py-4 px-6 border-t border-white/[0.06] bg-[#0B1120]">
+                  <div className="flex gap-3 items-end">
+                    <textarea
+                      ref={inputRef}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Nhắn tin với Pet... (Enter để gửi)"
+                      rows={1}
+                      disabled={isTyping}
+                      className="input-dark flex-1 resize-none leading-relaxed max-h-32 overflow-y-auto"
+                      style={{ fieldSizing: 'content' } as React.CSSProperties}
+                    />
+                    <button onClick={() => handleSendAI()} disabled={!input.trim() || isTyping} className="btn-primary p-3 shrink-0 disabled:opacity-40">
+                      <Send className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* TAB 2: GỬI GVCN FORM */}
+            {activeTab === 'form' && (
+              <motion.div
+                key="tab-form"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="flex flex-col h-full absolute inset-0 overflow-y-auto pb-10"
+              >
+                <div className="glass-card p-6 md:p-8 max-w-2xl mx-auto w-full mt-4">
+                  <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
+                    <div className="p-3 bg-purple-500/20 rounded-xl">
+                      <MessageSquare className="w-6 h-6 text-purple-400" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-white">Kết quả học tập</h2>
-                      <p className="text-sm text-slate-400">Điểm số</p>
+                      <h2 className="text-xl font-bold text-white">Gửi vấn đề đến GVCN</h2>
+                      <p className="text-sm text-slate-400">Tin nhắn này sẽ được gửi trực tiếp đến hộp thư của GVCN</p>
                     </div>
                   </div>
-                  {grades && (
-                    <div className="text-right">
-                      <p className="text-sm text-slate-400">Điểm trung bình (GPA)</p>
-                      <p className={`text-3xl font-bold ${grades.gpa >= 8 ? 'text-emerald-400' : grades.gpa >= 5 ? 'text-blue-400' : 'text-red-400'}`}>
-                        {grades.gpa.toFixed(2)}
-                      </p>
+
+                  {formSuccess ? (
+                    <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6 text-center">
+                      <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
+                      <h3 className="text-emerald-400 font-semibold mb-2">{formSuccess}</h3>
+                      <p className="text-slate-400 text-sm mb-6">Giáo viên sẽ nhận được thông báo và phản hồi lại cho bạn sớm nhất có thể.</p>
+                      <button onClick={() => setFormSuccess('')} className="btn-primary bg-emerald-600 hover:bg-emerald-500 px-6">
+                        Gửi tin nhắn khác
+                      </button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSubmitForm} className="space-y-5">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">Tiêu đề</label>
+                        <input
+                          type="text"
+                          value={formTitle}
+                          onChange={(e) => setFormTitle(e.target.value)}
+                          className="input-dark w-full"
+                          placeholder="Ví dụ: Tư vấn về tâm lý học tập..."
+                          disabled={formLoading}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">Nội dung chi tiết</label>
+                        <textarea
+                          value={formContent}
+                          onChange={(e) => setFormContent(e.target.value)}
+                          className="input-dark w-full min-h-[150px] resize-y"
+                          placeholder="Mô tả chi tiết vấn đề của bạn để GVCN có thể hỗ trợ tốt nhất..."
+                          disabled={formLoading}
+                          required
+                        />
+                      </div>
+                      {formError && (
+                        <p className="text-red-400 text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4" /> {formError}</p>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={formLoading}
+                        className="w-full btn-primary bg-purple-600 hover:bg-purple-500 py-3 disabled:opacity-50"
+                      >
+                        {formLoading ? 'Đang gửi...' : 'Gửi thông tin cho GVCN'}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* TAB 3: GRADES */}
+            {activeTab === 'grades' && (
+              <motion.div
+                key="tab-grades"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="flex flex-col h-full absolute inset-0 overflow-y-auto pb-10"
+              >
+                <div className="glass-card p-6 md:p-8 max-w-2xl mx-auto w-full mt-4">
+                  <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/10">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-emerald-500/20 rounded-xl">
+                        <BookOpen className="w-6 h-6 text-emerald-400" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-white">Kết quả học tập</h2>
+                        <p className="text-sm text-slate-400">Điểm số</p>
+                      </div>
+                    </div>
+                    {grades && (
+                      <div className="text-right">
+                        <p className="text-sm text-slate-400">Điểm trung bình (GPA)</p>
+                        <p className={`text-3xl font-bold ${grades.gpa >= 8 ? 'text-emerald-400' : grades.gpa >= 5 ? 'text-blue-400' : 'text-red-400'}`}>
+                          {grades.gpa.toFixed(2)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {gradesLoading ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                      <RefreshCw className="w-8 h-8 animate-spin mb-4 text-emerald-500/50" />
+                      <p>Đang tải bảng điểm...</p>
+                    </div>
+                  ) : !grades ? (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-navy-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <BookOpen className="w-8 h-8 text-slate-500" />
+                      </div>
+                      <p className="text-slate-300 font-medium text-lg">Chưa có dữ liệu điểm</p>
+                      <p className="text-slate-500 text-sm mt-2">Hiện tại hệ thống chưa nhận được dữ liệu điểm của bạn.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-12 gap-4 px-4 py-2 bg-navy-900/50 rounded-lg text-sm font-medium text-slate-400">
+                        <div className="col-span-8">Môn học</div>
+                        <div className="col-span-4 text-right">Điểm số</div>
+                      </div>
+                      {grades.subjects.map((sub, idx) => (
+                        <div key={idx} className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-white/[0.05] hover:bg-white/[0.02] transition-colors items-center">
+                          <div className="col-span-8 text-slate-200 font-medium">{sub.subject_name}</div>
+                          <div className="col-span-4 text-right">
+                            <span className={`inline-block px-3 py-1 rounded-full font-bold text-sm ${sub.score >= 8 ? 'bg-emerald-500/10 text-emerald-400' :
+                              sub.score >= 5 ? 'bg-blue-500/10 text-blue-400' :
+                                'bg-red-500/10 text-red-400'
+                              }`}>
+                              {sub.score.toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                      {grades.updated_at && (
+                        <p className="text-xs text-slate-500 text-right mt-4 pt-4">
+                          Cập nhật lần cuối: {new Date(grades.updated_at).toLocaleDateString('vi-VN')}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
+              </motion.div>
+            )}
 
-                {gradesLoading ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-                    <RefreshCw className="w-8 h-8 animate-spin mb-4 text-emerald-500/50" />
-                    <p>Đang tải bảng điểm...</p>
-                  </div>
-                ) : !grades ? (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-navy-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <BookOpen className="w-8 h-8 text-slate-500" />
+            {/* TAB 4: MY ISSUES */}
+            {activeTab === 'my-issues' && (
+              <motion.div
+                key="tab-my-issues"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="flex flex-col h-full absolute inset-0 overflow-y-auto pb-10"
+              >
+                <div className="glass-card p-6 md:p-8 max-w-4xl mx-auto w-full mt-4">
+                  <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
+                    <div className="p-3 bg-orange-500/20 rounded-xl">
+                      <AlertCircle className="w-6 h-6 text-orange-400" />
                     </div>
-                    <p className="text-slate-300 font-medium text-lg">Chưa có dữ liệu điểm</p>
-                    <p className="text-slate-500 text-sm mt-2">Hiện tại hệ thống chưa nhận được dữ liệu điểm của bạn.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-12 gap-4 px-4 py-2 bg-navy-900/50 rounded-lg text-sm font-medium text-slate-400">
-                      <div className="col-span-8">Môn học</div>
-                      <div className="col-span-4 text-right">Điểm số</div>
+                    <div>
+                      <h2 className="text-xl font-bold text-white">Danh sách vấn đề đã gửi</h2>
+                      <p className="text-sm text-slate-400">Theo dõi trạng thái và trao đổi với GVCN</p>
                     </div>
-                    {grades.subjects.map((sub, idx) => (
-                      <div key={idx} className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-white/[0.05] hover:bg-white/[0.02] transition-colors items-center">
-                        <div className="col-span-8 text-slate-200 font-medium">{sub.subject_name}</div>
-                        <div className="col-span-4 text-right">
-                          <span className={`inline-block px-3 py-1 rounded-full font-bold text-sm ${sub.score >= 8 ? 'bg-emerald-500/10 text-emerald-400' :
-                            sub.score >= 5 ? 'bg-blue-500/10 text-blue-400' :
-                              'bg-red-500/10 text-red-400'
-                            }`}>
-                            {sub.score.toFixed(1)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                    {grades.updated_at && (
-                      <p className="text-xs text-slate-500 text-right mt-4 pt-4">
-                        Cập nhật lần cuối: {new Date(grades.updated_at).toLocaleDateString('vi-VN')}
-                      </p>
-                    )}
                   </div>
-                )}
-              </div>
-            </motion.div>
-          )}
 
-          {/* TAB 4: MY ISSUES */}
-          {activeTab === 'my-issues' && (
-            <motion.div
-              key="tab-my-issues"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="flex flex-col h-full absolute inset-0 overflow-y-auto pb-10"
-            >
-              <div className="glass-card p-6 md:p-8 max-w-4xl mx-auto w-full mt-4">
-                <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
-                  <div className="p-3 bg-orange-500/20 rounded-xl">
-                    <AlertCircle className="w-6 h-6 text-orange-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Danh sách vấn đề đã gửi</h2>
-                    <p className="text-sm text-slate-400">Theo dõi trạng thái và trao đổi với GVCN</p>
-                  </div>
+                  {issuesLoading ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                      <RefreshCw className="w-8 h-8 animate-spin mb-4 text-orange-500/50" />
+                      <p>Đang tải danh sách...</p>
+                    </div>
+                  ) : (
+                    <IssueTable
+                      issues={myIssues}
+                      onResolve={() => { }} // SV không được phép tự đóng issue
+                      isResolvingId={undefined}
+                      currentUserId={studentId}
+                      currentUserRole="STUDENT"
+                    />
+                  )}
                 </div>
+              </motion.div>
+            )}
 
-                {issuesLoading ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-                    <RefreshCw className="w-8 h-8 animate-spin mb-4 text-orange-500/50" />
-                    <p>Đang tải danh sách...</p>
-                  </div>
-                ) : (
-                  <IssueTable
-                    issues={myIssues}
-                    onResolve={() => { }} // SV không được phép tự đóng issue
-                    isResolvingId={undefined}
-                    currentUserId={studentId}
-                    currentUserRole="STUDENT"
-                  />
-                )}
-              </div>
-            </motion.div>
-          )}
-
-        </AnimatePresence>
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Password Modal */}

@@ -19,3 +19,7 @@ requests>=2.31.0
 
 # --- Storage (Lưu trữ) ---
 cloudinary >= 1.44.2
+
+# --- Data Processing (Xử lý dữ liệu) ---
+pandas>=2.0.0
+openpyxl>=3.1.0

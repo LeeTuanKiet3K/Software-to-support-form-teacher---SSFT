@@ -60,9 +60,10 @@ export default function AdvisorChatPage() {
     setIsLoading(true);
 
     try {
+      const classId = sessionStorage.getItem('ssft_class_id') || '';
       const response = await apiClient('/chat/advisor', {
         method: 'POST',
-        body: JSON.stringify({ message: userMessage.content })
+        body: JSON.stringify({ message: userMessage.content, class_id: classId })
       });
 
       const aiMessage: ChatMessage = {
@@ -125,7 +126,7 @@ export default function AdvisorChatPage() {
 
                 {/* Content */}
                 <div className={`space-y-3 ${msg.role === 'user' ? 'items-end' : ''}`}>
-                  <div className={`px-4 py-3 text-sm rounded-2xl ${
+                  <div className={`px-4 py-3 text-sm rounded-2xl whitespace-pre-wrap ${
                     msg.role === 'ai' 
                       ? 'bg-navy-800/80 border border-white/10 text-slate-200 rounded-tl-sm' 
                       : 'bg-gradient-to-br from-purple-600 to-blue-500 text-white rounded-tr-sm'

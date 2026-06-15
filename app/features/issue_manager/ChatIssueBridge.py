@@ -82,15 +82,20 @@ class ChatIssueBridge:
         if len(preview) > 500:
             preview = preview[:497] + "..."
 
+        studentProfile = self.m_dbHandler.queryOne("Users", "student_id", studentId)
+        studentClassId = studentProfile.get("class_id", "") if studentProfile else ""
+
         issueData: Dict[str, Any] = {
             "chat_id": chatId,
             "student_id": studentId,
+            "class_id": studentClassId,
             "priority": mapped,
             "status": IssueStatus.OPEN,
             "priority_level": priorityLevel,
             "category": category,
             "is_fallback": isFallback,
             "source": "priority_logic",
+            "content": preview,
             "student_message_preview": preview,
             "is_advisor_viewed": False,
             "created_at": firestore.SERVER_TIMESTAMP,

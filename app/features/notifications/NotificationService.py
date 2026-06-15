@@ -19,10 +19,10 @@ class NotificationService:
             studentId (str): ID sinh viên.
         """
 
-        # Lấy thông tin sinh viên
-        student: Dict[str, Any] = self.m_dbHandler.getDocument(
+        student: Dict[str, Any] = self.m_dbHandler.queryOne(
             collection="Users",
-            docId=studentId
+            field="student_id",
+            value=studentId
         )
 
         if not student:
@@ -72,10 +72,10 @@ class NotificationService:
 
     # Gửi cảnh báo học vụ đến GVCN.
     def sendAcademicAlert(self, studentId: str, alerts: List[str]) -> None:
-        # Lấy thông tin sinh viên
-        student: Dict[str, Any] = self.m_dbHandler.getDocument(
+        student: Dict[str, Any] = self.m_dbHandler.queryOne(
             collection="Users",
-            docId=studentId
+            field="student_id",
+            value=studentId
         )
 
         if not student:
@@ -168,7 +168,7 @@ class NotificationService:
         # 2. Gửi thông báo cho từng sinh viên
         sent_count = 0
         for student in students:
-            studentId = student.get("id")
+            studentId = student.get("student_id")
             if not studentId:
                 continue
                 
