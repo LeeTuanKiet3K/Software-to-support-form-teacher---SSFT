@@ -342,10 +342,10 @@ export default function StudentPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col max-w-4xl mx-auto px-4 bg-navy-950">
+    <div className="min-h-screen flex flex-col bg-navy-950">
       {/* --- Header --- */}
       <motion.header
-        className="flex items-center justify-between py-4 border-b border-white/[0.06] sticky top-0 z-20 bg-navy-950"
+        className="flex items-center justify-between py-4 px-6 border-b border-white/[0.06] sticky top-0 z-20 bg-navy-950"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -360,155 +360,162 @@ export default function StudentPage() {
           </div>
         </div>
 
-        <div className="flex gap-4 items-center">
-          {/* Notification Bell */}
-          <div className="relative" ref={notifRef}>
-            <button 
-              onClick={() => setShowNotif(!showNotif)}
-              className={`relative p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/5 transition-colors group
-                          ${showNotif ? 'bg-white/10 text-white' : ''}`}
-            >
-              <Bell className={`w-5 h-5 ${notifications.filter(n => !n.read).length > 0 ? 'group-hover:animate-wiggle' : ''}`} />
-              {notifications.filter(n => !n.read).length > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-navy-900"></span>
-              )}
-            </button>
-
-            {/* Notification Dropdown */}
-            <AnimatePresence>
-              {showNotif && (
-                <motion.div
-                  className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-navy-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="flex items-center justify-between p-4 border-b border-white/5 bg-navy-800/50">
-                    <h3 className="text-white font-semibold text-sm">Thông báo</h3>
-                  </div>
-                  <div className="max-h-80 overflow-y-auto custom-scrollbar">
-                    {notifications.length === 0 ? (
-                      <div className="p-6 text-center text-slate-400 text-sm">Chưa có thông báo nào.</div>
-                    ) : (
-                      notifications.map((notif) => (
-                        <div 
-                          key={notif.id} 
-                          className={`p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors flex gap-3 group/item
-                                     ${!notif.read ? 'bg-purple-500/5' : ''}`}
-                        >
-                          <div className="shrink-0 mt-1">
-                            {notif.type === 'announcement' ? <Bell className="w-4 h-4 text-purple-400" /> : 
-                             notif.type === 'urgent' ? <AlertTriangle className="w-4 h-4 text-red-400" /> :
-                             <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm mb-1 ${!notif.read ? 'text-white font-semibold' : 'text-slate-300 font-medium'}`}>
-                              {notif.title}
-                            </p>
-                            <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed whitespace-pre-wrap">{notif.desc}</p>
-                            <p className="text-[10px] text-slate-500 mt-2">{notif.time}</p>
-                          </div>
-                          <div className="flex flex-col gap-2 items-center opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity">
-                            {!notif.read && (
-                              <button onClick={(e) => handleMarkAsRead(notif.id, e)} className="p-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-md tooltip" title="Đánh dấu đã đọc">
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                            <button onClick={(e) => handleDeleteNotification(notif.id, e)} className="p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-md tooltip" title="Xóa">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <div className="h-6 w-px bg-white/10 hidden sm:block"></div>
-
-          <div className="relative" ref={profileRef}>
-            <button 
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-            >
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 p-[1px]">
-                <div className="w-full h-full rounded-full bg-navy-900 flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
-                </div>
-              </div>
-            </button>
-            
-            <AnimatePresence>
-              {showProfileMenu && (
-                <motion.div
-                  className="absolute right-0 mt-2 w-48 bg-navy-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden py-1 z-50"
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="px-4 py-3 border-b border-white/5 mb-1">
-                    <p className="text-sm font-medium text-white truncate">{studentName}</p>
-                    <p className="text-xs text-slate-400">Sinh viên</p>
-                  </div>
-                  
-                  <button 
-                    onClick={() => { setShowProfileMenu(false); setShowPasswordModal(true); }}
-                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
-                  >
-                    <Key className="w-4 h-4" /> Đổi mật khẩu
-                  </button>
-                  <button 
-                    onClick={() => { setShowProfileMenu(false); sessionStorage.clear(); router.push('/login'); }}
-                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-red-400 hover:bg-red-400/10 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" /> Đăng xuất
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
       </motion.header>
 
-      {/* --- Tab Navigation --- */}
-      <div className="flex bg-navy-900/50 p-1.5 rounded-2xl my-6 border border-white/[0.05]">
-        <button
-          onClick={() => setActiveTab('ai')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'ai' ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <Bot className="w-4 h-4" /> Hỏi Pet hỗ trợ
-        </button>
-        <button
-          onClick={() => setActiveTab('form')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'form' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <MessageSquare className="w-4 h-4" /> Liên hệ GVCN
-        </button>
-        <button
-          onClick={() => setActiveTab('grades')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'grades' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <BookOpen className="w-4 h-4" /> Bảng điểm
-        </button>
-        <button
-          onClick={() => setActiveTab('my-issues')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'my-issues' ? 'bg-orange-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <AlertCircle className="w-4 h-4" /> Vấn đề của tôi
-        </button>
-      </div>
+      <div className="flex flex-1 overflow-hidden">
+        {/* --- Sidebar --- */}
+        <div className="w-64 shrink-0 border-r border-white/[0.06] flex flex-col py-6 bg-navy-950 hidden md:flex">
+          <div className="px-4 mb-2">
+            <p className="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wider px-2">DỊCH VỤ CHÍNH</p>
+            <div className="space-y-1">
+              <button
+                onClick={() => setActiveTab('ai')}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'ai' ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg shadow-purple-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              >
+                <Bot className="w-5 h-5" /> Hỏi Pet hỗ trợ
+              </button>
+              <button
+                onClick={() => setActiveTab('form')}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'form' ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg shadow-purple-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              >
+                <MessageSquare className="w-5 h-5" /> Liên hệ GVCN
+              </button>
+              <button
+                onClick={() => setActiveTab('grades')}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'grades' ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg shadow-purple-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              >
+                <BookOpen className="w-5 h-5" /> Bảng điểm
+              </button>
+              <button
+                onClick={() => setActiveTab('my-issues')}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${activeTab === 'my-issues' ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg shadow-purple-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              >
+                <AlertCircle className="w-5 h-5" /> Vấn đề của tôi
+              </button>
+            </div>
+          </div>
 
-      <div className="flex-1 overflow-hidden flex flex-col relative">
-        <AnimatePresence mode="wait">
+          {/* TIỆN ÍCH & QUY ĐỊNH was moved to QUICK ACTIONS */}
+
+          {/* User Profile and Notifications (Moved to bottom of sidebar) */}
+          <div className="mt-auto px-4 pt-4 border-t border-white/[0.06] flex items-center justify-between">
+            <div className="relative" ref={profileRef}>
+              <button 
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              >
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 p-[1px]">
+                  <div className="w-full h-full rounded-full bg-navy-900 flex items-center justify-center">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                </div>
+                <div className="text-left hidden md:block">
+                  <p className="text-sm font-medium text-white truncate max-w-[100px]">{studentName}</p>
+                </div>
+              </button>
+              
+              <AnimatePresence>
+                {showProfileMenu && (
+                  <motion.div
+                    className="absolute bottom-full left-0 mb-2 w-48 bg-navy-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden py-1 z-50"
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="px-4 py-3 border-b border-white/5 mb-1">
+                      <p className="text-sm font-medium text-white truncate">{studentName}</p>
+                      <p className="text-xs text-slate-400">Sinh viên</p>
+                    </div>
+                    
+                    <button 
+                      onClick={() => { setShowProfileMenu(false); setShowPasswordModal(true); }}
+                      className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
+                    >
+                      <Key className="w-4 h-4" /> Đổi mật khẩu
+                    </button>
+                    <button 
+                      onClick={() => { setShowProfileMenu(false); sessionStorage.clear(); router.push('/login'); }}
+                      className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-red-400 hover:bg-red-400/10 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" /> Đăng xuất
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="relative" ref={notifRef}>
+              <button 
+                onClick={() => setShowNotif(!showNotif)}
+                className={`relative p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/5 transition-colors group
+                            ${showNotif ? 'bg-white/10 text-white' : ''}`}
+              >
+                <Bell className={`w-5 h-5 ${notifications.filter(n => !n.read).length > 0 ? 'group-hover:animate-wiggle' : ''}`} />
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-navy-900"></span>
+                )}
+              </button>
+
+              {/* Notification Dropdown */}
+              <AnimatePresence>
+                {showNotif && (
+                  <motion.div
+                    className="absolute bottom-full left-0 mb-2 w-80 max-w-[calc(100vw-2rem)] bg-navy-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="flex items-center justify-between p-4 border-b border-white/5 bg-navy-800/50">
+                      <h3 className="text-white font-semibold text-sm">Thông báo</h3>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                      {notifications.length === 0 ? (
+                        <div className="p-6 text-center text-slate-400 text-sm">Chưa có thông báo nào.</div>
+                      ) : (
+                        notifications.map((notif) => (
+                          <div 
+                            key={notif.id} 
+                            className={`p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors flex gap-3 group/item
+                                       ${!notif.read ? 'bg-purple-500/5' : ''}`}
+                          >
+                            <div className="shrink-0 mt-1">
+                              {notif.type === 'announcement' ? <Bell className="w-4 h-4 text-purple-400" /> : 
+                               notif.type === 'urgent' ? <AlertTriangle className="w-4 h-4 text-red-400" /> :
+                               <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm mb-1 ${!notif.read ? 'text-white font-semibold' : 'text-slate-300 font-medium'}`}>
+                                {notif.title}
+                              </p>
+                              <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed whitespace-pre-wrap">{notif.desc}</p>
+                              <p className="text-[10px] text-slate-500 mt-2">{notif.time}</p>
+                            </div>
+                            <div className="flex flex-col gap-2 items-center opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity">
+                              {!notif.read && (
+                                <button onClick={(e) => handleMarkAsRead(notif.id, e)} className="p-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-md tooltip" title="Đánh dấu đã đọc">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              <button onClick={(e) => handleDeleteNotification(notif.id, e)} className="p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-md tooltip" title="Xóa">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+
+        {/* --- Main Content --- */}
+        <div className="flex-1 overflow-hidden flex flex-col relative bg-[#0B1120]">
+          <AnimatePresence mode="wait">
 
           {/* TAB 1: AI CHAT */}
           {activeTab === 'ai' && (
@@ -519,21 +526,21 @@ export default function StudentPage() {
               exit={{ opacity: 0, x: -20 }}
               className="flex flex-col h-full absolute inset-0"
             >
-              <div className="flex gap-2 py-2 overflow-x-auto scrollbar-none">
+              <div className="flex gap-3 px-6 pt-6 pb-2 overflow-x-auto scrollbar-none shrink-0">
                 {QUICK_ACTIONS.map(({ label, icon: Icon }) => (
                   <button
                     key={label}
                     onClick={() => handleSendAI(label)}
                     className="flex items-center gap-2 px-4 py-2 rounded-full shrink-0
-                               bg-navy-800/60 border border-white/[0.08] text-slate-300 text-sm
-                               hover:bg-navy-700/60 hover:border-purple-500/30 hover:text-white"
+                               bg-transparent border border-white/20 text-slate-300 text-xs font-medium
+                               hover:bg-white/5 hover:border-purple-500/50 hover:text-white transition-all"
                   >
-                    <Icon className="w-3.5 h-3.5 text-purple-400" /> {label}
+                    <Icon className="w-4 h-4 text-purple-400" />
+                    <span>{label}</span>
                   </button>
                 ))}
               </div>
-
-              <div className="flex-1 space-y-5 py-4 overflow-y-auto pr-2 custom-scrollbar">
+              <div className="flex-1 space-y-5 px-6 pb-6 pt-2 overflow-y-auto custom-scrollbar">
                 {messages.length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-3">
                     <Bot className="w-12 h-12 text-slate-700" />
@@ -597,7 +604,7 @@ export default function StudentPage() {
                 <div ref={bottomRef} />
               </div>
 
-              <div className="py-4 border-t border-white/[0.06]">
+              <div className="py-4 px-6 border-t border-white/[0.06] bg-[#0B1120]">
                 <div className="flex gap-3 items-end">
                   <textarea
                     ref={inputRef}
@@ -799,7 +806,8 @@ export default function StudentPage() {
             </motion.div>
           )}
 
-        </AnimatePresence>
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Password Modal */}
