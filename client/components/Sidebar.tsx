@@ -30,7 +30,7 @@ export function Sidebar() {
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [advisorName, setAdvisorName] = useState('GVCN');
   const [advisorInitials, setAdvisorInitials] = useState('U');
-  
+
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -95,7 +95,7 @@ export function Sidebar() {
   return (
     <motion.aside
       className="w-64 shrink-0 h-screen sticky top-0 flex flex-col
-                 bg-navy-900/80 backdrop-blur-xl border-r border-white/[0.05]"
+                 bg-navy-900/80 backdrop-blur-xl border-r border-white/[0.05] z-30"
       initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.4 }}
@@ -239,7 +239,7 @@ export function Sidebar() {
                     </div>
                   ))}
                   {notifications.length === 0 && (
-                     <div className="p-6 text-center text-slate-400 text-sm">Không có thông báo nào</div>
+                    <div className="p-6 text-center text-slate-400 text-sm">Không có thông báo nào</div>
                   )}
                 </div>
                 <div className="p-3 bg-navy-900 border-t border-white/5 text-center">

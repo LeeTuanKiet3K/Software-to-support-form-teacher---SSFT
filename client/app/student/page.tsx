@@ -179,13 +179,13 @@ export default function StudentPage() {
     if (activeTab === 'grades' && !grades) {
       fetchGrades();
     }
-    
+
     let interval: NodeJS.Timeout;
     if (activeTab === 'my-issues') {
       fetchMyIssues();
       interval = setInterval(fetchMyIssues, 10000); // Tự động cập nhật mỗi 10 giây
     }
-    
+
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -363,7 +363,7 @@ export default function StudentPage() {
         <div className="flex gap-4 items-center">
           {/* Notification Bell */}
           <div className="relative" ref={notifRef}>
-            <button 
+            <button
               onClick={() => setShowNotif(!showNotif)}
               className={`relative p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/5 transition-colors group
                           ${showNotif ? 'bg-white/10 text-white' : ''}`}
@@ -392,15 +392,15 @@ export default function StudentPage() {
                       <div className="p-6 text-center text-slate-400 text-sm">Chưa có thông báo nào.</div>
                     ) : (
                       notifications.map((notif) => (
-                        <div 
-                          key={notif.id} 
+                        <div
+                          key={notif.id}
                           className={`p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors flex gap-3 group/item
                                      ${!notif.read ? 'bg-purple-500/5' : ''}`}
                         >
                           <div className="shrink-0 mt-1">
-                            {notif.type === 'announcement' ? <Bell className="w-4 h-4 text-purple-400" /> : 
-                             notif.type === 'urgent' ? <AlertTriangle className="w-4 h-4 text-red-400" /> :
-                             <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                            {notif.type === 'announcement' ? <Bell className="w-4 h-4 text-purple-400" /> :
+                              notif.type === 'urgent' ? <AlertTriangle className="w-4 h-4 text-red-400" /> :
+                                <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className={`text-sm mb-1 ${!notif.read ? 'text-white font-semibold' : 'text-slate-300 font-medium'}`}>
@@ -431,7 +431,7 @@ export default function StudentPage() {
           <div className="h-6 w-px bg-white/10 hidden sm:block"></div>
 
           <div className="relative" ref={profileRef}>
-            <button 
+            <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
@@ -441,7 +441,7 @@ export default function StudentPage() {
                 </div>
               </div>
             </button>
-            
+
             <AnimatePresence>
               {showProfileMenu && (
                 <motion.div
@@ -455,14 +455,14 @@ export default function StudentPage() {
                     <p className="text-sm font-medium text-white truncate">{studentName}</p>
                     <p className="text-xs text-slate-400">Sinh viên</p>
                   </div>
-                  
-                  <button 
+
+                  <button
                     onClick={() => { setShowProfileMenu(false); setShowPasswordModal(true); }}
                     className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
                   >
                     <Key className="w-4 h-4" /> Đổi mật khẩu
                   </button>
-                  <button 
+                  <button
                     onClick={() => { setShowProfileMenu(false); sessionStorage.clear(); router.push('/login'); }}
                     className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-red-400 hover:bg-red-400/10 transition-colors"
                   >
@@ -787,9 +787,9 @@ export default function StudentPage() {
                     <p>Đang tải danh sách...</p>
                   </div>
                 ) : (
-                  <IssueTable 
-                    issues={myIssues} 
-                    onResolve={() => {}} // SV không được phép tự đóng issue
+                  <IssueTable
+                    issues={myIssues}
+                    onResolve={() => { }} // SV không được phép tự đóng issue
                     isResolvingId={undefined}
                     currentUserId={studentId}
                     currentUserRole="STUDENT"
