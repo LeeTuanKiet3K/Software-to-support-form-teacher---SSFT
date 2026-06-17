@@ -70,6 +70,9 @@ export default function AcademicPage() {
 
     const formData = new FormData();
     formData.append('file', file);
+    if (classId) {
+      formData.append('class_id', classId);
+    }
 
     try {
       await apiClient('/academic/grades/upload', {
@@ -210,11 +213,27 @@ export default function AcademicPage() {
                   <td className="px-6 py-4 text-white font-semibold">{student.name || 'Chưa cập nhật'}</td>
                   <td className="px-6 py-4 text-right text-purple-400 font-bold">{Number(student.gpa).toFixed(2)}</td>
                   <td className="px-6 py-4 text-center">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border
-                      ${student.is_low_score ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                        'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
-                      {student.is_low_score ? 'Cảnh báo rớt' : 'An toàn'}
-                    </span>
+                    {(() => {
+                      let status = "An toàn";
+                      let colorClass = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                      
+                      if (!student.gpa || student.gpa === 0) {
+                        status = "Chưa có điểm";
+                        colorClass = "bg-slate-500/10 text-slate-400 border-slate-500/20";
+                      } else if (student.gpa < 2.0) {
+                        status = "Nguy cơ";
+                        colorClass = "bg-red-500/10 text-red-400 border-red-500/20";
+                      } else if (student.gpa < 2.5) {
+                        status = "Cảnh báo";
+                        colorClass = "bg-orange-500/10 text-orange-400 border-orange-500/20";
+                      }
+
+                      return (
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${colorClass}`}>
+                          {status}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button className="p-1.5 text-slate-500 hover:text-white rounded-md hover:bg-white/10 transition-colors">

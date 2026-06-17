@@ -51,10 +51,11 @@ class AcademicService:
 
         # Nếu chưa tồn tại -> create mới
         else:
-            self.m_dbHandler.getClient() \
-                .collection("Academic_records") \
-                .document(studentId) \
-                .set(data)
+            self.m_dbHandler.saveDocument(
+                collectionName="Academic_records",
+                documentId=studentId,
+                data=data
+            )
 
             success = True
 
