@@ -8,11 +8,21 @@
 ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?logo=firebase&logoColor=black)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-[Demo](#) • [Documentation](./docs) • [Architecture](#system-architecture)
+[Overview](#overview) •
+[Features](#key-features) •
+[Screenshots](#screenshots) •
+[Architecture](#system-architecture) •
+[AI Workflow](#ai-processing-workflow) •
+[Installation](#installation) •
+[Quick Start](#quick-start) •
+[Project Structure](#project-structure) •
+[Documentation](#documentation) •
+[Contributing](#contributing) •
+[License](#license)
 
 ---
 
-## 📌 Overview
+## Overview
 
 Smart Advisor là hệ thống hỗ trợ Giáo viên Chủ nhiệm (GVCN) quản lý và tư vấn sinh viên bằng Trí tuệ nhân tạo (AI).
 
@@ -26,7 +36,7 @@ Hệ thống giúp:
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 ### 🤖 AI Student Assistant
 
@@ -60,27 +70,23 @@ Hệ thống giúp:
 
 ---
 
-## 🖼️ Screenshots
+## Screenshots
 
 ### Login
 
-![Login](docs/images/login.png)
+![Login](images/login.png)
 
 ### Advisor Dashboard
 
-![Advisor Dashboard](docs/images/advisor-dashboard.png)
+![Advisor Dashboard](images/advisor_dashboard.png)
 
 ### Student Workspace
 
-![Student Workspace](docs/images/student-dashboard.png)
-
-### AI Chat Assistant
-
-![AI Chat](docs/images/chat.png)
+![Student Workspace](images/student_dashboard.png)
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```text
 ┌─────────────────────┐
@@ -112,7 +118,7 @@ Hệ thống giúp:
 
 ---
 
-## 🤖 AI Processing Workflow
+## AI Processing Workflow
 
 ```text
 Student Message
@@ -142,7 +148,7 @@ Advisor Notification
 
 ---
 
-## 🚨 Issue Lifecycle
+## Issue Lifecycle
 
 ```text
 Student
@@ -169,7 +175,7 @@ Advisor Review
 
 ---
 
-## 👥 User Roles
+## User Roles
 
 ### Student
 
@@ -190,7 +196,7 @@ Advisor Review
 
 ---
 
-## ⚙️ Installation
+## Installation
 
 ### Backend
 
@@ -221,7 +227,7 @@ http://localhost:3000
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Start Backend
 
@@ -244,7 +250,7 @@ http://localhost:3000
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 project-root/
@@ -266,7 +272,7 @@ project-root/
 
 ---
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 ### Firebase Connection Error
 
@@ -292,7 +298,7 @@ npm run dev -- -p 3001
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 ```bash
 git checkout -b feature/my-feature
@@ -304,7 +310,7 @@ Sau đó tạo Pull Request.
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 | File                   | Description          |
 | ---------------------- | -------------------- |
@@ -315,14 +321,14 @@ Sau đó tạo Pull Request.
 
 ---
 
-## 🐛 Known Issues
+## Known Issues
 
 - Gemini API có thể phản hồi chậm khi quá tải
 - Một số giao diện chưa tối ưu cho màn hình rất nhỏ
 
 ---
 
-## 📄 Changelog
+## Changelog
 
 ### v2.0.0
 
@@ -336,6 +342,6 @@ Sau đó tạo Pull Request.
 
 ---
 
-## ⚖️ License
+## License
 
 MIT License.
