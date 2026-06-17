@@ -4,13 +4,16 @@ export const apiClient = async (endpoint: string, options: RequestInit = {}) => 
   // Tự động lấy URL gốc từ file .env.local
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
+  const isFormData = options.body instanceof FormData;
+  const headers: HeadersInit = {
+    ...(!isFormData && { 'Content-Type': 'application/json' }),
+    ...options.headers,
+  };
+
   // Gọi API thẳng đến Backend
   const response = await fetch(`${baseUrl}${endpoint}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {

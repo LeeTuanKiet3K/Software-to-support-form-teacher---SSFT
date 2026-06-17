@@ -2,7 +2,7 @@ import time
 from typing import List, Optional
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel, Field
 
 from app.api.deps import get_academic_service, get_firestore_handler
@@ -187,6 +187,7 @@ async def get_class_students(
 @router.post("/grades/upload")
 async def upload_grades_file(
     file: UploadFile = File(...),
+    class_id: Optional[str] = Form(None),
     db_handler: FirestoreHandler = Depends(get_firestore_handler),
     academic_service: AcademicService = Depends(get_academic_service)
 ):
@@ -236,12 +237,13 @@ async def upload_grades_file(
             user = db_handler.queryOne("Users", "student_id", mssv)
             
             if user and user.get("role") == "student":
-                class_id = user.get("class_id", "")
+                # Lấy class_id từ form truyền lên, nếu không có thì lấy từ database
+                target_class_id = class_id if class_id else user.get("class_id", "")
                 
                 # Dữ liệu cập nhật
                 data = {
                     "student_id": mssv,
-                    "class_id": class_id,
+                    "class_id": target_class_id,
                     "gpa": gpa,
                     # Tương lai có thể map thêm môn học từ file vào mảng subjects
                 }
