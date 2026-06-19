@@ -14,6 +14,7 @@
 [Architecture](#system-architecture) •
 [AI Workflow](#ai-processing-workflow) •
 [Installation](#installation) •
+[Environment Variables](#environment-variables) •
 [Quick Start](#quick-start) •
 [Project Structure](#project-structure) •
 [Documentation](#documentation) •
@@ -223,6 +224,44 @@ Frontend:
 
 ```text
 http://localhost:3000
+```
+---
+
+## Environment Variables
+
+Create a `.env` file in the project root.
+
+You can copy from `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Required environment variables:
+
+```env
+# Firebase
+FIREBASE_SERVICE_ACCOUNT_JSON=
+FIREBASE_WEB_API_KEY=
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# AI
+GEMINI_API_KEY=
+GROQ_API_KEY=
+GROQ_DATAHELPER_API_KEY=
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+AI_ENABLED=True
+
+# System
+ENVIRONMENT=development
+API_PORT=8000
+SYSTEM_VERSION=1.0.0-beta
+ALLOWED_EMAIL_DOMAIN=student.hcmus.edu.vn
+MAX_UPLOAD_SIZE_MB=5
 ```
 
 ---
